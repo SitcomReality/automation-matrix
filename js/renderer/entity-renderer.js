@@ -11,6 +11,7 @@ const drawChevron = (ctx, color) => {
 };
 
 export function drawEntity(ctx, engine, state, e) {
+    if (!e) return;
     ctx.save();
     ctx.translate(e.x * TILE_SIZE, e.y * TILE_SIZE);
 
@@ -65,6 +66,10 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.fillStyle = '#7F8C8D';
         ctx.fillRect(TILE_SIZE - 6, TILE_SIZE / 2 - 4, 6, 8);
     } else if (e.type === 'sand-processor') {
+        if (!e.state || !e.state.grid) {
+            ctx.restore();
+            return;
+        }
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
         ctx.fillStyle = '#1A252F';
@@ -93,6 +98,10 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.moveTo(w / 2 - 15, h - 25); ctx.lineTo(w / 2 + 15, h - 25); ctx.lineTo(w / 2 + 8, h - 10); ctx.lineTo(w / 2 - 8, h - 10);
         ctx.fill();
     } else if (e.type === 'blender') {
+        if (!e.state || !e.state.grid) {
+            ctx.restore();
+            return;
+        }
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
         ctx.fillStyle = '#5D6D7E';
@@ -125,6 +134,10 @@ export function drawEntity(ctx, engine, state, e) {
         }
         ctx.fillStyle = '#7F8C8D'; ctx.fillRect(w - 6, h / 2 - 8, 6, 16);
     } else if (e.type === 'slot-machine') {
+        if (!e.state) {
+            ctx.restore();
+            return;
+        }
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
         ctx.fillStyle = '#8E44AD'; ctx.fillRect(4, 4, w - 8, h - 8);

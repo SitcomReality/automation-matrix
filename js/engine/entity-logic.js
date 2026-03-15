@@ -19,6 +19,7 @@ export function processEntity(engine, e) {
 
     // Blender logic
     if (e.type === 'blender') {
+        if (!e.state || !e.state.grid) return;
         if (engine.tick % 2 === 0) {
             for (let y = 18; y >= 0; y--) {
                 for (let x = 0; x < 20; x++) {
@@ -98,6 +99,7 @@ export function processEntity(engine, e) {
 
     // Slot Machine
     if (e.type === 'slot-machine') {
+        if (!e.state) return;
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
             if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
@@ -131,6 +133,7 @@ export function processEntity(engine, e) {
 
     // Sand Processor simulation
     if (e.type === 'sand-processor') {
+        if (!e.state || !e.state.grid) return;
         const currentParticles = e.state.grid.flat().filter(v => v === 1).length;
         if (currentParticles < 150) {
             for (let i = engine.items.length - 1; i >= 0; i--) {

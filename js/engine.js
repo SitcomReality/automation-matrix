@@ -25,12 +25,20 @@ export class GameEngine {
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                this.tiles = data.tiles;
+                this.tiles = data.tiles || [];
                 this.terrain = data.terrain || generateTerrain();
-                this.entities = data.entities;
-                this.items = data.items;
+                this.entities = (data.entities || []).filter(e => e !== null);
+                this.items = data.items || [];
+                
+                // Safety migration: Ensure essential state exists for complex buildings
+                this.entities.forEach(e => {
+                    if (!e.state) e.state = {};
+                });
+                
                 return;
-            } catch (e) {}
+            } catch (e) {
+                console.error("Failed to parse save data", e);
+            }
         }
         this.terrain = generateTerrain();
         this.tiles = generateMap(this.terrain);
