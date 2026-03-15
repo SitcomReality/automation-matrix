@@ -229,31 +229,62 @@ export class Renderer {
             const w = e.width * TILE_SIZE;
             const h = e.height * TILE_SIZE;
 
+            // Outer ring
             ctx.fillStyle = '#5D6D7E';
             ctx.beginPath();
-            ctx.arc(w / 2, h / 2, w / 2 - 6, 0, Math.PI * 2);
+            ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.fillStyle =
-                e.state.items.length === 2
-                    ? '#F5D04C'
-                    : e.state.items.length === 1
-                    ? '#9B59B6'
-                    : '#2C3E50';
+            // Glass/Container area
+            ctx.fillStyle = '#0B0C10';
             ctx.beginPath();
-            ctx.arc(w / 2, h / 2, w / 2 - 12, 0, Math.PI * 2);
+            ctx.arc(w / 2, h / 2, w / 2 - 10, 0, Math.PI * 2);
             ctx.fill();
 
+            // Draw internal particles
+            const gridW = w - 24;
+            const gridH = h - 24;
+            const cellW = gridW / 20;
+            const cellH = gridH / 20;
+            const startX = 12;
+            const startY = 12;
+
+            for (let sy = 0; sy < 20; sy++) {
+                for (let sx = 0; sx < 20; sx++) {
+                    const val = e.state.grid[sy][sx];
+                    if (val > 0) {
+                        const itemType = e.state.items[val - 1];
+                        ctx.fillStyle = itemType === 'juice' ? '#E94560' : itemType === 'ore' ? '#66FCF1' : '#E67E22';
+                        ctx.fillRect(startX + sx * cellW, startY + sy * cellH, cellW + 0.5, cellH + 0.5);
+                    }
+                }
+            }
+
+            // Blade animation
             if (e.state.items.length > 0) {
                 ctx.save();
                 ctx.translate(w / 2, h / 2);
-                ctx.rotate(engine.tick * 0.1);
-                ctx.fillStyle = '#2C3E50';
-                ctx.fillRect(-w / 2 + 16, -2, w - 32, 4);
-                ctx.fillRect(-2, -w / 2 + 16, 4, w - 32);
+                // Rotate faster if blending
+                const rotSpeed = e.state.blending ? 0.4 : 0.05;
+                ctx.rotate(engine.tick * rotSpeed);
+                ctx.strokeStyle = '#BDC3C7';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(-10, 0); ctx.lineTo(10, 0);
+                ctx.moveTo(0, -10); ctx.lineTo(0, 10);
+                ctx.stroke();
+                
+                // Centrifuge/Pulse effect when blending
+                if (e.state.blending) {
+                    ctx.strokeStyle = '#F5D04C';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, (30 - e.state.blendTimer) * 0.8, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
                 ctx.restore();
             }
 
+            // Output pipe
             ctx.fillStyle = '#7F8C8D';
             ctx.fillRect(w - 6, h / 2 - 8, 6, 16);
         } else if (e.type === 'slot-machine') {

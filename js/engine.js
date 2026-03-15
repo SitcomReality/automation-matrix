@@ -101,7 +101,8 @@ export class GameEngine {
             config = { cycle: 0 };
         } else if (type === 'blender') {
             w = 2; h = 2;
-            config = { items: [] };
+            const grid = Array(20).fill(null).map(() => Array(20).fill(0));
+            config = { items: [], grid, blendTimer: 0, blending: false };
         }
         
         if (this.canPlace(x, y, w, h)) {
@@ -259,21 +260,87 @@ export class GameEngine {
 
         // Blender logic
         if (e.type === 'blender') {
-            for (let i = this.items.length - 1; i >= 0; i--) {
-                const item = this.items[i];
-                if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
-                    if (e.state.items.length < 2 && item.type !== 'blend' && !e.state.items.includes(item.type)) {
-                        e.state.items.push(item.type);
+            // Particle physics (falling sand style)
+            if (this.tick % 2 === 0) {
+                for (let y = 18; y >= 0; y--) {
+                    for (let x = 0; x < 20; x++) {
+                        const val = e.state.grid[y][x];
+                        if (val > 0) {
+                            if (e.state.grid[y + 1][x] === 0) {
+                                e.state.grid[y][x] = 0; e.state.grid[y + 1][x] = val;
+                            } else {
+                                let l = x > 0 && e.state.grid[y + 1][x - 1] === 0;
+                                let r = x < 19 && e.state.grid[y + 1][x + 1] === 0;
+                                if (l && r) { 
+                                    if (Math.random() > 0.5) { e.state.grid[y][x] = 0; e.state.grid[y + 1][x - 1] = val; } 
+                                    else { e.state.grid[y][x] = 0; e.state.grid[y + 1][x + 1] = val; } 
+                                }
+                                else if (l) { e.state.grid[y][x] = 0; e.state.grid[y + 1][x - 1] = val; }
+                                else if (r) { e.state.grid[y][x] = 0; e.state.grid[y + 1][x + 1] = val; }
+                            }
+                        }
                     }
-                    this.items.splice(i, 1);
                 }
             }
-            if (e.state.items.length === 2) {
-                const nx = e.x + 2, ny = e.y;
-                const destE = this.getEntityAt(nx, ny);
-                if (destE && ['belt','splitter','combiner'].includes(destE.type)) {
-                    e.state.items = [];
-                    this.items.push({ id: Math.random().toString(), type: 'blend', x: nx, y: ny, progress: 0, outDir: destE.dir });
+
+            // Input handling
+            if (!e.state.blending) {
+                for (let i = this.items.length - 1; i >= 0; i--) {
+                    const item = this.items[i];
+                    if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
+                        // Accept only 2 unique resources
+                        if (e.state.items.length < 2 && item.type !== 'blend' && !e.state.items.includes(item.type)) {
+                            e.state.items.push(item.type);
+                            // Add colorful particles to grid based on item type
+                            const pType = e.state.items.length; // Uses index 1 or 2
+                            for (let k = 0; k < 20; k++) {
+                                let sx = 5 + Math.floor(Math.random() * 10);
+                                if (e.state.grid[0][sx] === 0) e.state.grid[0][sx] = pType;
+                            }
+                            this.items.splice(i, 1);
+                        }
+                    }
+                }
+            }
+
+            // Blending trigger when 2 items present
+            if (e.state.items.length === 2 && !e.state.blending) {
+                e.state.blending = true;
+                e.state.blendTimer = 30; // ~500ms at 60fps
+            }
+
+            // Blending process logic
+            if (e.state.blending) {
+                e.state.blendTimer--;
+                
+                // Agitate particles during blending
+                if (this.tick % 2 === 0) {
+                    for (let j = 0; j < 5; j++) {
+                        let rx = Math.floor(Math.random() * 20);
+                        let ry = Math.floor(Math.random() * 20);
+                        if (e.state.grid[ry][rx] > 0) {
+                            let nx = (rx + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
+                            let ny = (ry + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
+                            if (e.state.grid[ny][nx] === 0) {
+                                e.state.grid[ny][nx] = e.state.grid[ry][rx];
+                                e.state.grid[ry][rx] = 0;
+                            }
+                        }
+                    }
+                }
+
+                if (e.state.blendTimer <= 0) {
+                    const nx = e.x + 2, ny = e.y;
+                    const destE = this.getEntityAt(nx, ny);
+                    if (destE && ['belt','splitter','combiner'].includes(destE.type)) {
+                        const blocked = this.items.find(it => it.x === nx && it.y === ny && it.progress < 0.5);
+                        if (!blocked) {
+                            e.state.items = [];
+                            e.state.blending = false;
+                            e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
+                            this.items.push({ id: Math.random().toString(), type: 'blend', x: nx, y: ny, progress: 0, outDir: destE.dir });
+                        }
+                    }
                 }
             }
         }
