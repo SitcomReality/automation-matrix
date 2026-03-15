@@ -113,8 +113,29 @@ export function drawEntity(ctx, engine, state, e) {
         const h = e.height * TILE_SIZE;
         ctx.fillStyle = '#5D6D7E';
         ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#0B0C10';
+
+        // Determine background color based on blending state
+        let bowlColor = '#0B0C10';
+        if (e.state.blending && e.state.items.length === 2) {
+            const colors = {
+                'ore': [69, 162, 158],
+                'juice': [233, 69, 96],
+                'refined-ore': [102, 252, 241],
+                'refined-juice': [255, 77, 109],
+                'particle': [230, 126, 34],
+                'blend': [245, 208, 76]
+            };
+            const c1 = colors[e.state.items[0]] || [100, 100, 100];
+            const c2 = colors[e.state.items[1]] || [100, 100, 100];
+            const r = Math.floor((c1[0] + c2[0]) / 2);
+            const g = Math.floor((c1[1] + c2[1]) / 2);
+            const b = Math.floor((c1[2] + c2[2]) / 2);
+            bowlColor = `rgb(${r},${g},${b})`;
+        }
+        
+        ctx.fillStyle = bowlColor;
         ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 10, 0, Math.PI * 2); ctx.fill();
+
         const gridW = w - 24; const gridH = h - 24; const cellW = gridW / 20; const cellH = gridH / 20;
         const startX = 12; const startY = 12;
         for (let sy = 0; sy < 20; sy++) {
@@ -134,9 +155,6 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.rotate(engine.tick * rotSpeed);
             ctx.strokeStyle = '#BDC3C7'; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
-            if (e.state.blending) {
-                ctx.strokeStyle = '#F5D04C'; ctx.beginPath(); ctx.arc(0, 0, (30 - e.state.blendTimer) * 0.8, 0, Math.PI * 2); ctx.stroke();
-            }
             ctx.restore();
         }
         ctx.fillStyle = '#7F8C8D'; ctx.fillRect(w - 6, h / 2 - 8, 6, 16);

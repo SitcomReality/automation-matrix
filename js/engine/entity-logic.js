@@ -62,6 +62,7 @@ export function processEntity(engine, e) {
         if (e.state.items.length === 2 && !e.state.blending) {
             e.state.blending = true;
             e.state.blendTimer = 30;
+            e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
         }
 
         if (e.state.blending) {
