@@ -4,7 +4,7 @@ import { Renderer } from './renderer.js';
 import { UI } from './ui.js';
 import { InputHandler } from './input.js';
 import { audioManager } from './audio.js';
-import * as lucide from 'lucide';
+import { createIcons, icons } from 'lucide';
 
 class App {
     constructor() {
@@ -28,7 +28,7 @@ class App {
         window.addEventListener('mousedown', initAudio);
         window.addEventListener('touchstart', initAudio);
 
-        lucide.createIcons();
+        createIcons({ icons });
         this.loop();
     }
 
