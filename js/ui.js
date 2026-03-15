@@ -1,4 +1,5 @@
 import { TOOLS } from './constants.js';
+import { audioManager } from './audio.js';
 
 export class UI {
     constructor(state, engine) {
@@ -18,7 +19,10 @@ export class UI {
             const btn = document.createElement('button');
             btn.className = `tool-btn ${this.state.selectedTool === tool.id ? 'active' : ''}`;
             btn.innerHTML = `<i data-lucide="${tool.icon}"></i><span>${tool.label}</span>`;
-            btn.onclick = () => this.state.setTool(tool.id);
+            btn.onclick = () => {
+                this.state.setTool(tool.id);
+                audioManager.play('click', 0.2);
+            };
             container.appendChild(btn);
         });
     }
@@ -33,6 +37,7 @@ export class UI {
             cell.onmouseenter = () => {
                 if (activeTimer <= 0) {
                     this.state.addCurrency(1);
+                    audioManager.play('money', 0.05);
                     cell.classList.add('active');
                     activeTimer = 120;
                     const loop = () => {
@@ -53,7 +58,10 @@ export class UI {
     initDirections() {
         const btns = document.querySelectorAll('.dir-btn');
         btns.forEach(btn => {
-            btn.onclick = () => this.state.setDirection(btn.dataset.dir);
+            btn.onclick = () => {
+                this.state.setDirection(btn.dataset.dir);
+                audioManager.play('click', 0.2);
+            };
         });
     }
 

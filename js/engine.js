@@ -1,4 +1,5 @@
 import { MAP_SIZE, TILE_SIZE } from './constants.js';
+import { audioManager } from './audio.js';
 
 export class GameEngine {
     constructor(state) {
@@ -275,6 +276,7 @@ export class GameEngine {
                     else if (r1 === r2 || r2 === r3 || r1 === r3) payout = 20;
                     const final = payout * (e.state.multiplier || 0.1);
                     this.state.addCurrency(final);
+                    audioManager.play('money', 0.5);
                     this.notifications.push({ text: `+$${Math.floor(final)}`, x: (e.x + 1) * TILE_SIZE, y: e.y * TILE_SIZE, life: 60 });
                 }
             }

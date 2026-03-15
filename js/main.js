@@ -3,6 +3,7 @@ import { GameEngine } from './engine.js';
 import { Renderer } from './renderer.js';
 import { UI } from './ui.js';
 import { InputHandler } from './input.js';
+import { audioManager } from './audio.js';
 import * as lucide from 'lucide';
 
 class App {
@@ -18,6 +19,15 @@ class App {
         this.resize();
         window.addEventListener('resize', () => this.resize());
         
+        // Initialize audio on first interaction to comply with browser policies
+        const initAudio = () => {
+            audioManager.init();
+            window.removeEventListener('mousedown', initAudio);
+            window.removeEventListener('touchstart', initAudio);
+        };
+        window.addEventListener('mousedown', initAudio);
+        window.addEventListener('touchstart', initAudio);
+
         lucide.createIcons();
         this.loop();
     }

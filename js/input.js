@@ -1,4 +1,5 @@
 import { TILE_SIZE, MAP_SIZE } from './constants.js';
+import { audioManager } from './audio.js';
 
 export class InputHandler {
     constructor(canvas, engine, state, renderer) {
@@ -82,13 +83,17 @@ export class InputHandler {
             const ent = this.engine.getEntityAt(tx, ty);
             this.state.setSelectedEntityId(ent ? ent.id : null);
         } else if (tool === 'deleter') {
-            this.engine.removeEntity(tx, ty);
+            if (this.engine.removeEntity(tx, ty)) {
+                audioManager.play('click', 0.3);
+            }
         } else if (tool === 'belt') {
             const existing = this.engine.getEntityAt(tx, ty);
             if (existing && existing.type === 'belt') {
                 this.engine.changeBeltDir(existing, this.state.direction);
+                audioManager.play('place', 0.3);
             } else {
                 const added = this.engine.addEntity('belt', tx, ty, this.state.direction);
+                if (added) audioManager.play('place', 0.3);
                 if (!added && !existing) {
                     this.engine.notifications.push({
                         text: 'Cannot place here',
@@ -100,7 +105,9 @@ export class InputHandler {
             }
         } else {
             const added = this.engine.addEntity(tool, tx, ty, this.state.direction);
-            if (!added) {
+            if (added) {
+                audioManager.play('place', 0.5);
+            } else {
                 this.engine.notifications.push({
                     text: 'Cannot place here',
                     x: wx,
@@ -132,19 +139,28 @@ export class InputHandler {
             const oldEnt = this.engine.getEntityAt(lc.x, lc.y);
             if (!oldEnt || oldEnt.type === 'belt') {
                 if (oldEnt && oldEnt.type === 'belt') {
-                    this.engine.changeBeltDir(oldEnt, dir);
+                    if (oldEnt.dir !== dir) {
+                        this.engine.changeBeltDir(oldEnt, dir);
+                        audioManager.play('place', 0.1);
+                    }
                 } else {
-                    this.engine.addEntity('belt', lc.x, lc.y, dir);
+                    if (this.engine.addEntity('belt', lc.x, lc.y, dir)) {
+                        audioManager.play('place', 0.1);
+                    }
                 }
             }
 
-            // Place a belt in the new cell matching that direction if possible
             const newEnt = this.engine.getEntityAt(tx, ty);
             if (!newEnt || newEnt.type === 'belt') {
                 if (newEnt && newEnt.type === 'belt') {
-                    this.engine.changeBeltDir(newEnt, dir);
+                    if (newEnt.dir !== dir) {
+                        this.engine.changeBeltDir(newEnt, dir);
+                        audioManager.play('place', 0.1);
+                    }
                 } else {
-                    this.engine.addEntity('belt', tx, ty, dir);
+                    if (this.engine.addEntity('belt', tx, ty, dir)) {
+                        audioManager.play('place', 0.1);
+                    }
                 }
             }
 
