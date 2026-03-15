@@ -77,7 +77,7 @@ export class GameEngine {
         } else if (type === 'blender') {
             w = 2; h = 2;
             const grid = Array(20).fill(null).map(() => Array(20).fill(0));
-            config = { items: [], grid, blendTimer: 0, blending: false, blendColor: null };
+            config = { items: [], grid, blendTimer: 0, blending: false };
         }
         
         if (this.canPlace(x, y, w, h)) {

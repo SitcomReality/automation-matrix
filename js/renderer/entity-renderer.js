@@ -111,46 +111,22 @@ export function drawEntity(ctx, engine, state, e) {
         }
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
-
-        // Outer shell
         ctx.fillStyle = '#5D6D7E';
-        ctx.beginPath();
-        ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Inner cavity: transparent when idle, colored "liquid" while blending
-        ctx.save();
-        ctx.beginPath();
-        const innerRadius = w / 2 - 10;
-        ctx.arc(w / 2, h / 2, innerRadius, 0, Math.PI * 2);
-        if (e.state.blending && e.state.blendColor) {
-            ctx.fillStyle = e.state.blendColor;
-            ctx.fill();
-        } else {
-            // Punch a transparent hole so background shows through
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.fill();
-            ctx.globalCompositeOperation = 'source-over';
-        }
-        ctx.restore();
-
-        // Particle grid (only visible when not blending and particles exist)
+        ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = e.state.blending ? (e.state.blendColor || '#B026FF') : '#0B0C10';
+        ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 10, 0, Math.PI * 2); ctx.fill();
         const gridW = w - 24; const gridH = h - 24; const cellW = gridW / 20; const cellH = gridH / 20;
         const startX = 12; const startY = 12;
-        if (!e.state.blending) {
-            for (let sy = 0; sy < 20; sy++) {
-                for (let sx = 0; sx < 20; sx++) {
-                    const val = e.state.grid[sy][sx];
-                    if (val > 0) {
-                        const itemType = e.state.items[val - 1];
-                        ctx.fillStyle = itemType === 'juice' ? '#E94560' : itemType === 'ore' ? '#66FCF1' : '#E67E22';
-                        ctx.fillRect(startX + sx * cellW, startY + sy * cellH, cellW + 0.5, cellH + 0.5);
-                    }
+        for (let sy = 0; sy < 20; sy++) {
+            for (let sx = 0; sx < 20; sx++) {
+                const val = e.state.grid[sy][sx];
+                if (val > 0) {
+                    const itemType = e.state.items[val - 1];
+                    ctx.fillStyle = itemType === 'juice' ? '#E94560' : itemType === 'ore' ? '#66FCF1' : '#E67E22';
+                    ctx.fillRect(startX + sx * cellW, startY + sy * cellH, cellW + 0.5, cellH + 0.5);
                 }
             }
         }
-
-        // Blades
         if (e.state.items.length > 0) {
             ctx.save();
             ctx.translate(w / 2, h / 2);
@@ -158,11 +134,8 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.rotate(engine.tick * rotSpeed);
             ctx.strokeStyle = '#BDC3C7'; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
-            // Removed expanding yellow circle; spin alone conveys blending
             ctx.restore();
         }
-
-        // Output spout
         ctx.fillStyle = '#7F8C8D'; ctx.fillRect(w - 6, h / 2 - 8, 6, 16);
     } else if (e.type === 'slot-machine') {
         if (!e.state) {
