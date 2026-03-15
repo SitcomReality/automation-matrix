@@ -24,6 +24,7 @@ export class GameEngine {
             try {
                 const data = JSON.parse(saved);
                 this.tiles = data.tiles;
+                this.terrain = data.terrain || this.generateTerrain();
                 this.entities = data.entities;
                 this.items = data.items;
                 return;
@@ -35,17 +36,45 @@ export class GameEngine {
     save() {
         localStorage.setItem('factory-save', JSON.stringify({
             tiles: this.tiles,
+            terrain: this.terrain,
             entities: this.entities,
             items: this.items
         }));
     }
 
+    generateTerrain() {
+        const terrain = Array(MAP_SIZE).fill(0).map(() => Array(MAP_SIZE).fill(0));
+        const seedX = Math.random() * 1000;
+        const seedY = Math.random() * 1000;
+        
+        const getNoise = (x, y, scale) => {
+            return (Math.sin(x * scale + seedX) + Math.cos(y * scale + seedY)) * 0.5;
+        };
+
+        for (let y = 0; y < MAP_SIZE; y++) {
+            for (let x = 0; x < MAP_SIZE; x++) {
+                // Layered sine-noise for varied distribution
+                let val = getNoise(x, y, 0.12) * 0.7 + getNoise(x, y, 0.4) * 0.3;
+                terrain[y][x] = Math.max(0, Math.min(1, (val + 1) / 2));
+            }
+        }
+        return terrain;
+    }
+
     generateMap() {
+        this.terrain = this.generateTerrain();
         this.tiles = Array(MAP_SIZE).fill(null).map(() => Array(MAP_SIZE).fill(null));
-        for (let i = 0; i < 40; i++) {
-            let cx = Math.floor(Math.random() * MAP_SIZE);
-            let cy = Math.floor(Math.random() * MAP_SIZE);
-            this.tiles[cy][cx] = Math.random() > 0.5 ? 'ore' : 'juice';
+        
+        for (let y = 0; y < MAP_SIZE; y++) {
+            for (let x = 0; x < MAP_SIZE; x++) {
+                const val = this.terrain[y][x];
+                // Resources spawn only in "richer" noise areas
+                if (val > 0.75) {
+                    if (Math.random() > 0.85) {
+                        this.tiles[y][x] = val > 0.82 ? 'juice' : 'ore';
+                    }
+                }
+            }
         }
     }
 

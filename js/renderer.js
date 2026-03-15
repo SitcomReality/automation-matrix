@@ -20,6 +20,20 @@ export class Renderer {
         ctx.scale(cam.zoom, cam.zoom);
         ctx.translate(-MAP_SIZE * TILE_SIZE / 2, -MAP_SIZE * TILE_SIZE / 2);
 
+        // Draw terrain background gradient
+        if (engine.terrain) {
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    const val = engine.terrain[y][x];
+                    // Quantized grid coloring based on noise
+                    const intensity = Math.floor(val * 24);
+                    // Shift base color toward accent colors in high-noise areas
+                    ctx.fillStyle = `rgb(${11 + intensity}, ${12 + Math.floor(intensity * 1.5)}, ${16 + Math.floor(intensity * 2)})`;
+                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+            }
+        }
+
         // Draw Map Resources
         for (let y = 0; y < MAP_SIZE; y++) {
             for (let x = 0; x < MAP_SIZE; x++) {
