@@ -31,14 +31,21 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.translate(TILE_SIZE / 2, TILE_SIZE / 2);
         ctx.rotate(e.dir * Math.PI / 2);
 
+        // Mask the arrows so they stay within the belt's boundaries
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(-TILE_SIZE / 2 + 2, -TILE_SIZE / 2 + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+        ctx.clip();
+
         const offset = (engine.tick % 30) / 30;
-        ctx.translate(0, (offset - 0.5) * 12);
+        ctx.translate(0, (0.5 - offset) * 12); // Move forward by moving in negative Y
 
         drawChevron(ctx, '#7F8C8D');
         ctx.translate(0, 12);
         drawChevron(ctx, '#7F8C8D');
         ctx.translate(0, -24);
         drawChevron(ctx, '#7F8C8D');
+        ctx.restore(); // Restore from clip mask, but keep original translation/rotation
 
         if (e.type === 'splitter') {
             ctx.fillStyle = '#F1C40F';
@@ -47,7 +54,7 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.fillStyle = '#9B59B6';
             ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
         }
-        ctx.restore();
+        ctx.restore(); // Final restore to exit belt-local context
     } else if (e.type === 'miner') {
         ctx.fillStyle = '#34495E';
         ctx.fillRect(2, 2, TILE_SIZE - 4, TILE_SIZE - 4);
