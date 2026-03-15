@@ -109,55 +109,105 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.restore();
             return;
         }
+
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
+
+        // Outer shell
         ctx.fillStyle = '#5D6D7E';
-        ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2);
+        ctx.fill();
 
-        // Determine background color based on blending state
-        let bowlColor = '#0B0C10';
-        if (e.state.blending && e.state.items.length === 2) {
-            const colors = {
-                'ore': [69, 162, 158],
-                'juice': [233, 69, 96],
-                'refined-ore': [102, 252, 241],
-                'refined-juice': [255, 77, 109],
-                'particle': [230, 126, 34],
-                'blend': [245, 208, 76]
+        // Determine liquid color based on items inside
+        const getTypeColor = (type) => {
+            if (type === 'juice') return '#E94560';
+            if (type === 'ore') return '#66FCF1';
+            return '#E67E22';
+        };
+        const hexToRgb = (hex) => {
+            const h = hex.replace('#', '');
+            return {
+                r: parseInt(h.substring(0, 2), 16),
+                g: parseInt(h.substring(2, 4), 16),
+                b: parseInt(h.substring(4, 6), 16)
             };
-            const c1 = colors[e.state.items[0]] || [100, 100, 100];
-            const c2 = colors[e.state.items[1]] || [100, 100, 100];
-            const r = Math.floor((c1[0] + c2[0]) / 2);
-            const g = Math.floor((c1[1] + c2[1]) / 2);
-            const b = Math.floor((c1[2] + c2[2]) / 2);
-            bowlColor = `rgb(${r},${g},${b})`;
-        }
-        
-        ctx.fillStyle = bowlColor;
-        ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 10, 0, Math.PI * 2); ctx.fill();
+        };
+        const rgbToHex = ({ r, g, b }) => {
+            const toHex = (v) => v.toString(16).padStart(2, '0');
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        };
+        const mixColors = (c1, c2) => {
+            const a = hexToRgb(c1);
+            const b = hexToRgb(c2);
+            return rgbToHex({
+                r: Math.round((a.r + b.r) / 2),
+                g: Math.round((a.g + b.g) / 2),
+                b: Math.round((a.b + b.b) / 2)
+            });
+        };
 
-        const gridW = w - 24; const gridH = h - 24; const cellW = gridW / 20; const cellH = gridH / 20;
-        const startX = 12; const startY = 12;
+        let innerColor = '#0B0C10';
+        if (e.state.items && e.state.items.length === 1) {
+            innerColor = getTypeColor(e.state.items[0]);
+        } else if (e.state.items && e.state.items.length >= 2) {
+            innerColor = mixColors(
+                getTypeColor(e.state.items[0]),
+                getTypeColor(e.state.items[1])
+            );
+        }
+
+        // Inner "liquid" area
+        ctx.fillStyle = innerColor;
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, w / 2 - 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Slight darker rim/overlay to keep depth
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, w / 2 - 10, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Sand particles grid (will be empty once blending starts)
+        const gridW = w - 24;
+        const gridH = h - 24;
+        const cellW = gridW / 20;
+        const cellH = gridH / 20;
+        const startX = 12;
+        const startY = 12;
         for (let sy = 0; sy < 20; sy++) {
             for (let sx = 0; sx < 20; sx++) {
                 const val = e.state.grid[sy][sx];
                 if (val > 0) {
                     const itemType = e.state.items[val - 1];
-                    ctx.fillStyle = itemType === 'juice' ? '#E94560' : itemType === 'ore' ? '#66FCF1' : '#E67E22';
+                    ctx.fillStyle = getTypeColor(itemType);
                     ctx.fillRect(startX + sx * cellW, startY + sy * cellH, cellW + 0.5, cellH + 0.5);
                 }
             }
         }
+
+        // Blades
         if (e.state.items.length > 0) {
             ctx.save();
             ctx.translate(w / 2, h / 2);
             const rotSpeed = e.state.blending ? 0.4 : 0.05;
             ctx.rotate(engine.tick * rotSpeed);
-            ctx.strokeStyle = '#BDC3C7'; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
+            ctx.strokeStyle = '#BDC3C7';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-10, 0);
+            ctx.lineTo(10, 0);
+            ctx.moveTo(0, -10);
+            ctx.lineTo(0, 10);
+            ctx.stroke();
             ctx.restore();
         }
-        ctx.fillStyle = '#7F8C8D'; ctx.fillRect(w - 6, h / 2 - 8, 6, 16);
+
+        // Output spout
+        ctx.fillStyle = '#7F8C8D';
+        ctx.fillRect(w - 6, h / 2 - 8, 6, 16);
     } else if (e.type === 'slot-machine') {
         if (!e.state) {
             ctx.restore();
