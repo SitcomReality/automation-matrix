@@ -83,8 +83,31 @@ export class InputHandler {
             this.state.setSelectedEntityId(ent ? ent.id : null);
         } else if (tool === 'deleter') {
             this.engine.removeEntity(tx, ty);
+        } else if (tool === 'belt') {
+            const existing = this.engine.getEntityAt(tx, ty);
+            if (existing && existing.type === 'belt') {
+                this.engine.changeBeltDir(existing, this.state.direction);
+            } else {
+                const added = this.engine.addEntity('belt', tx, ty, this.state.direction);
+                if (!added && !existing) {
+                    this.engine.notifications.push({
+                        text: 'Cannot place here',
+                        x: wx,
+                        y: wy,
+                        life: 60
+                    });
+                }
+            }
         } else {
-            this.engine.addEntity(tool, tx, ty, this.state.direction);
+            const added = this.engine.addEntity(tool, tx, ty, this.state.direction);
+            if (!added) {
+                this.engine.notifications.push({
+                    text: 'Cannot place here',
+                    x: wx,
+                    y: wy,
+                    life: 60
+                });
+            }
         }
     }
 
@@ -92,15 +115,39 @@ export class InputHandler {
         const { wx, wy } = this.getWorldCoord(e.clientX, e.clientY);
         const tx = Math.floor(wx / TILE_SIZE);
         const ty = Math.floor(wy / TILE_SIZE);
+
         if (this.lastCell && (this.lastCell.x !== tx || this.lastCell.y !== ty)) {
-            const dx = tx - this.lastCell.x;
-            const dy = ty - this.lastCell.y;
+            const lc = this.lastCell;
+            const dx = tx - lc.x;
+            const dy = ty - lc.y;
+
             let dir = this.state.direction;
-            if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? 1 : 3;
-            else dir = dy > 0 ? 2 : 0;
-            
-            this.engine.addEntity('belt', this.lastCell.x, this.lastCell.y, dir);
-            this.engine.addEntity('belt', tx, ty, dir);
+            if (Math.abs(dx) > Math.abs(dy)) {
+                dir = dx > 0 ? 1 : 3; // E or W
+            } else {
+                dir = dy > 0 ? 2 : 0; // S or N
+            }
+
+            // Update old cell only if it's empty or already a belt (ported behavior)
+            const oldEnt = this.engine.getEntityAt(lc.x, lc.y);
+            if (!oldEnt || oldEnt.type === 'belt') {
+                if (oldEnt && oldEnt.type === 'belt') {
+                    this.engine.changeBeltDir(oldEnt, dir);
+                } else {
+                    this.engine.addEntity('belt', lc.x, lc.y, dir);
+                }
+            }
+
+            // Place a belt in the new cell matching that direction if possible
+            const newEnt = this.engine.getEntityAt(tx, ty);
+            if (!newEnt || newEnt.type === 'belt') {
+                if (newEnt && newEnt.type === 'belt') {
+                    this.engine.changeBeltDir(newEnt, dir);
+                } else {
+                    this.engine.addEntity('belt', tx, ty, dir);
+                }
+            }
+
             this.lastCell = { x: tx, y: ty };
         }
     }

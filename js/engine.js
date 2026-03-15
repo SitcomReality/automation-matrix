@@ -104,51 +104,84 @@ export class GameEngine {
             return n.life > 0;
         });
 
-        // Movement Logic
-        for (let item of this.items) {
+        // Process belts and item movement (ported from original engine)
+        for (let i = 0; i < this.items.length; i++) {
+            let item = this.items[i];
             const e = this.getEntityAt(item.x, item.y);
             if (!e || (e.type !== 'belt' && e.type !== 'splitter' && e.type !== 'combiner')) continue;
 
-            if (item.outDir === undefined) this.assignOutput(e, item);
+            if (item.outDir === undefined) {
+                this.assignOutput(e, item);
+            }
 
             const { nx, ny } = this.getBeltOutput(e, item);
             let maxProgress = 1.0;
 
-            const itemsOnSame = this.items.filter(it => it.x === item.x && it.y === item.y && it !== item && it.progress > item.progress);
+            // Check items on the same tile ahead of this one
+            const itemsOnSame = this.items.filter(
+                it => it.x === item.x && it.y === item.y && it !== item && it.progress > item.progress
+            );
             if (itemsOnSame.length > 0) {
-                const nextItem = itemsOnSame.reduce((min, it) => it.progress < min.progress ? it : min);
+                const nextItem = itemsOnSame.reduce((min, it) => (it.progress < min.progress ? it : min));
                 maxProgress = nextItem.progress - 0.5;
             } else {
+                // Check next tile
                 const destE = this.getEntityAt(nx, ny);
                 if (destE) {
-                    const blockers = ['belt', 'splitter', 'combiner', 'sand-processor', 'slot-machine', 'blender'];
-                    if (blockers.includes(destE.type)) {
+                    if (destE.type === 'belt' || destE.type === 'splitter' || destE.type === 'combiner') {
                         const itemsOnNext = this.items.filter(it => it.x === nx && it.y === ny);
                         if (itemsOnNext.length > 0) {
-                            const lastItem = itemsOnNext.reduce((min, it) => it.progress < min.progress ? it : min);
+                            const lastItem = itemsOnNext.reduce((min, it) => (it.progress < min.progress ? it : min));
                             maxProgress = lastItem.progress + 0.5;
                         } else {
-                            maxProgress = 2.0; 
+                            maxProgress = 2.0; // Space is clear
                         }
+                    } else if (destE.type === 'sand-processor' && nx === destE.x + 1 && ny === destE.y) {
+                        maxProgress = 2.0;
+                    } else if (destE.type === 'slot-machine' && nx >= destE.x && nx < destE.x + 2 && ny >= destE.y && ny < destE.y + 2) {
+                        maxProgress = 2.0;
+                    } else if (destE.type === 'blender' && nx >= destE.x && nx < destE.x + 2 && ny >= destE.y && ny < destE.y + 2) {
+                        maxProgress = 2.0;
                     } else {
-                        maxProgress = 1.0;
+                        maxProgress = 1.0; // Blocked by incompatible entity
                     }
                 } else {
-                    maxProgress = 1.0;
+                    maxProgress = 1.0; // Blocked, end of belt
                 }
             }
 
             const speed = 0.05;
-            item.progress = Math.min(item.progress + speed, maxProgress);
+            if (item.progress + speed <= maxProgress) {
+                item.progress += speed;
+            } else {
+                item.progress = Math.min(item.progress + speed, maxProgress);
+            }
+
+            // Cap at 1.0 if not allowed to cross
+            if (maxProgress <= 1.0 && item.progress > maxProgress) {
+                item.progress = maxProgress;
+            }
 
             if (item.progress >= 1.0) {
                 const destE = this.getEntityAt(nx, ny);
                 if (destE) {
-                    if (['belt', 'splitter', 'combiner'].includes(destE.type)) {
-                        item.x = nx; item.y = ny; item.progress -= 1.0;
+                    if (destE.type === 'belt' || destE.type === 'splitter' || destE.type === 'combiner') {
+                        item.x = nx;
+                        item.y = ny;
+                        item.progress -= 1.0;
                         this.assignOutput(destE, item);
-                    } else {
-                        item.x = nx; item.y = ny; item.progress = 0;
+                    } else if (destE.type === 'sand-processor') {
+                        item.x = nx;
+                        item.y = ny;
+                        item.progress = 0;
+                    } else if (destE.type === 'slot-machine') {
+                        item.x = nx;
+                        item.y = ny;
+                        item.progress = 0;
+                    } else if (destE.type === 'blender') {
+                        item.x = nx;
+                        item.y = ny;
+                        item.progress = 0;
                     }
                 }
             }
@@ -157,6 +190,24 @@ export class GameEngine {
         // Entity Processing
         for (let e of this.entities) {
             this.processEntity(e);
+        }
+    }
+
+    changeBeltDir(e, dir) {
+        if (e.dir !== dir) {
+            e.dir = dir;
+            // Force any resources on this belt to reroute immediately (ported from original engine)
+            for (const item of this.items) {
+                if (
+                    item.x >= e.x &&
+                    item.x < e.x + e.width &&
+                    item.y >= e.y &&
+                    item.y < e.y + e.height
+                ) {
+                    item.outDir = undefined;
+                    item.waitTimer = 0;
+                }
+            }
         }
     }
 
@@ -268,13 +319,32 @@ export class GameEngine {
             if (collected > 0) {
                 e.state.processTimer += collected;
                 if (e.state.processTimer >= 20) {
-                    let nx = e.x + 1, ny = e.y + 3;
+                    let nx = e.x + 1,
+                        ny = e.y + 3;
                     const destE = this.getEntityAt(nx, ny);
-                    if (destE && ['belt','splitter','combiner'].includes(destE.type) && !this.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
-                        let outType = e.state.currentProcessingType === 'ore' ? 'refined-ore' : e.state.currentProcessingType === 'juice' ? 'refined-juice' : 'particle';
-                        this.items.push({ id: Math.random().toString(), type: outType, x: nx, y: ny, progress: 0 });
+                    if (
+                        destE &&
+                        ['belt', 'splitter', 'combiner'].includes(destE.type) &&
+                        !this.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)
+                    ) {
+                        let outType =
+                            e.state.currentProcessingType === 'ore'
+                                ? 'refined-ore'
+                                : e.state.currentProcessingType === 'juice'
+                                ? 'refined-juice'
+                                : 'particle';
+                        if (e.state.currentProcessingType === 'blend') outType = 'particle';
+                        this.items.push({
+                            id: Math.random().toString(),
+                            type: outType,
+                            x: nx,
+                            y: ny,
+                            progress: 0
+                        });
                         e.state.processTimer = 0;
-                    } else { e.state.processTimer = 20; }
+                    } else {
+                        e.state.processTimer = 20; // stall process if blocked
+                    }
                 }
             }
         }
