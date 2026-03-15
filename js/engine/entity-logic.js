@@ -1,6 +1,28 @@
 import { TILE_SIZE } from '../constants.js';
 import { audioManager } from '../audio.js';
 
+export function canAcceptItem(e, itemType) {
+    if (!e || !e.state) return false;
+    
+    if (e.type === 'sand-processor') {
+        const currentParticles = e.state.grid.flat().filter(v => v === 1).length;
+        return currentParticles < 150;
+    }
+    
+    if (e.type === 'blender') {
+        return !e.state.blending && 
+               e.state.items.length < 2 && 
+               !e.state.items.includes(itemType) && 
+               itemType !== 'blend';
+    }
+    
+    if (e.type === 'slot-machine') {
+        return !e.state.spinning;
+    }
+    
+    return false;
+}
+
 export function processEntity(engine, e) {
     // Miner Logic
     if (e.type === 'miner' && engine.tick % 240 === 0) {
@@ -46,7 +68,7 @@ export function processEntity(engine, e) {
             for (let i = engine.items.length - 1; i >= 0; i--) {
                 const item = engine.items[i];
                 if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
-                    if (e.state.items.length < 2 && item.type !== 'blend' && !e.state.items.includes(item.type)) {
+                    if (canAcceptItem(e, item.type)) {
                         e.state.items.push(item.type);
                         const pType = e.state.items.length;
                         for (let k = 0; k < 20; k++) {
@@ -111,13 +133,13 @@ export function processEntity(engine, e) {
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
             if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
-                if (!e.state.spinning) {
+                if (canAcceptItem(e, item.type)) {
                     let mult = 0.1;
                     if (['blend', 'refined-ore', 'refined-juice'].includes(item.type)) mult = 1.0;
                     if (item.type === 'particle') mult = 0.5;
                     e.state.spinning = true; e.state.spinTime = 60; e.state.multiplier = mult;
+                    engine.items.splice(i, 1);
                 }
-                engine.items.splice(i, 1);
             }
         }
         if (e.state.spinning) {
@@ -142,11 +164,10 @@ export function processEntity(engine, e) {
     // Sand Processor simulation
     if (e.type === 'sand-processor') {
         if (!e.state || !e.state.grid) return;
-        const currentParticles = e.state.grid.flat().filter(v => v === 1).length;
-        if (currentParticles < 150) {
-            for (let i = engine.items.length - 1; i >= 0; i--) {
-                const item = engine.items[i];
-                if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3) {
+        for (let i = engine.items.length - 1; i >= 0; i--) {
+            const item = engine.items[i];
+            if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3) {
+                if (canAcceptItem(e, item.type)) {
                     e.state.currentProcessingType = item.type;
                     engine.items.splice(i, 1);
                     for(let sx=9; sx<=19; sx++) { e.state.grid[0][sx] = 1; e.state.grid[1][sx] = 1; }

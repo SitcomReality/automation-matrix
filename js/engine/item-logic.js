@@ -1,4 +1,5 @@
 import { TILE_SIZE } from '../constants.js';
+import { canAcceptItem } from './entity-logic.js';
 
 export function getBeltOutput(e, item) {
     let d = (item && item.outDir !== undefined) ? item.outDir : e.dir;
@@ -51,12 +52,12 @@ export function updateItemMovement(engine) {
                     } else {
                         maxProgress = 2.0;
                     }
-                } else if (
-                    (destE.type === 'sand-processor' && nx === destE.x + 1 && ny === destE.y) ||
-                    (destE.type === 'slot-machine' && nx >= destE.x && nx < destE.x + 2 && ny >= destE.y && ny < destE.y + 2) ||
-                    (destE.type === 'blender' && nx >= destE.x && nx < destE.x + 2 && ny >= destE.y && ny < destE.y + 2)
-                ) {
-                    maxProgress = 2.0;
+                } else if (destE.type === 'sand-processor' && nx === destE.x + 1 && ny === destE.y) {
+                    maxProgress = canAcceptItem(destE, item.type) ? 2.0 : 1.0;
+                } else if (destE.type === 'slot-machine' && nx >= destE.x && nx < destE.x + 2 && ny >= destE.y && ny < destE.y + 2) {
+                    maxProgress = canAcceptItem(destE, item.type) ? 2.0 : 1.0;
+                } else if (destE.type === 'blender' && nx >= destE.x && nx < destE.x + 2 && ny >= destE.y && ny < destE.y + 2) {
+                    maxProgress = canAcceptItem(destE, item.type) ? 2.0 : 1.0;
                 } else {
                     maxProgress = 1.0;
                 }
@@ -84,9 +85,11 @@ export function updateItemMovement(engine) {
                     item.progress -= 1.0;
                     assignOutput(destE, item);
                 } else if (['sand-processor', 'slot-machine', 'blender'].includes(destE.type)) {
-                    item.x = nx;
-                    item.y = ny;
-                    item.progress = 0;
+                    if (canAcceptItem(destE, item.type)) {
+                        item.x = nx;
+                        item.y = ny;
+                        item.progress = 0;
+                    }
                 }
             }
         }
