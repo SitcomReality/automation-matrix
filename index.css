@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark: #050505;
+  --color-panel: #0a0a0a;
+  --color-panel-alt: #131313;
+  --color-border: #333333;
+  --color-primary: #FF0055;
+  --color-secondary: #00FFCC;
+  --color-tertiary: #CCFF00;
+  --color-text-main: #e0e0e0;
+  --color-text-muted: #666666;
+
+  --animate-squash-stretch: squash-stretch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+
+  @keyframes squash-stretch {
+    0% { transform: scale(1, 1); }
+    25% { transform: scale(1.2, 0.8); }
+    50% { transform: scale(0.8, 1.2); }
+    75% { transform: scale(1.1, 0.9); }
+    100% { transform: scale(1, 1); }
+  }
+}
+
+html, body {
+  background-color: var(--color-dark);
+  color: var(--color-text-main);
+  font-family: 'Courier New', Courier, monospace;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* App takes full screen, handle scroll internally if needed */
+  user-select: none;
+}
+
+/* Scrollbar styles for dense UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-dark);
+  border-left: 1px solid var(--color-border);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+.brutalist-border {
+  border: 1px solid var(--color-border);
+}
+
+.brutalist-button {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-panel);
+  color: var(--color-text-main);
+  text-transform: uppercase;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.brutalist-button:hover:not(:disabled) {
+  background-color: var(--color-text-main);
+  color: var(--color-dark);
+}
+
+.brutalist-button:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.brutalist-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* SVG filters for metaball effect */
+.metaball-container {
+  filter: url('#metaball-filter');
+}
+
+/* Fix mobile scaling */
+@media (max-width: 768px) {
+  body {
+    overflow: auto;
+  }
+  #root > div {
+    height: auto !important;
+    min-height: 100vh;
+  }
+}

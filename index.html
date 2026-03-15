@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Automation Matrix</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "lucide": "https://esm.sh/lucide@0.344.0"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div id="app">
+        <!-- LEFT SIDEBAR: Tools -->
+        <aside id="toolbar" class="sidebar left">
+            <div class="sidebar-header">BUILD</div>
+            <div class="tool-grid" id="tool-buttons">
+                <!-- Buttons injected by UI module -->
+            </div>
+            
+            <div class="direction-selector">
+                <div class="label">DIRECTION</div>
+                <div class="dir-grid">
+                    <button class="dir-btn" data-dir="0" id="dir-n">N</button>
+                    <div class="dir-row">
+                        <button class="dir-btn" data-dir="3" id="dir-w">W</button>
+                        <button class="dir-btn" data-dir="1" id="dir-e">E</button>
+                    </div>
+                    <button class="dir-btn" data-dir="2" id="dir-s">S</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CENTER: Game Canvas -->
+        <main id="game-container">
+            <canvas id="game-canvas"></canvas>
+            <div id="currency-display" class="hud-overlay">
+                $ <span id="currency-value">0</span>
+            </div>
+            <div class="controls-hint hud-overlay bottom">
+                L-Click: Place • R-Click: Pan • Scroll: Zoom
+            </div>
+        </main>
+
+        <!-- RIGHT SIDEBAR: Matrix & Tutorial -->
+        <aside id="stats-panel" class="sidebar right">
+            <div class="matrix-container">
+                <div class="matrix-header">DOPAMINE MATRIX</div>
+                <div id="clicker-matrix" class="matrix-grid">
+                    <!-- Matrix cells injected by UI module -->
+                </div>
+            </div>
+
+            <div class="tutorial-box">
+                <div class="tutorial-header">TUTORIAL</div>
+                <p>Rub the <span class="accent">MATRIX</span> for quick cash.</p>
+                <p>Build Miners on <span class="cyan">Cyan</span> / <span class="red">Red</span> tiles.</p>
+                <p>Use Belts to move resources.</p>
+                <p>Sand Processors (3x3) convert inputs to particle juice.</p>
+                <p>Slot Machines (2x2) spin for cash.</p>
+            </div>
+        </aside>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

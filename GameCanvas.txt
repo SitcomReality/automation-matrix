@@ -1,0 +1,203 @@
+import { useEffect, useRef } from 'react';
+import { GameEngine, TILE_SIZE, MAP_SIZE } from './engine';
+import { useStore } from './store';
+import { renderGame } from './render';
+
+let engine: GameEngine;
+
+export function GameCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cam = useRef({ x: 0, y: 0, zoom: 1 });
+  const isDragging = useRef(false);
+  const isBuilding = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
+  const lastCell = useRef<{x: number, y: number} | null>(null);
+
+  const { tool, direction, addCurrency, setSelectedEntityId } = useStore();
+
+  useEffect(() => {
+    if (!engine) {
+      engine = new GameEngine((amount, x, y) => {
+        addCurrency(amount);
+        engine.notifications.push({ text: `+$${amount}`, x, y, life: 60 });
+      });
+    }
+
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+
+    let frameId: number;
+    const loop = () => {
+      engine.update();
+      draw(ctx);
+      frameId = requestAnimationFrame(loop);
+    };
+    frameId = requestAnimationFrame(loop);
+    
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  const draw = (ctx: CanvasRenderingContext2D) => {
+    const canvas = ctx.canvas;
+    const rect = canvas.getBoundingClientRect();
+    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+    
+    renderGame(
+      ctx,
+      engine,
+      cam.current,
+      canvas.width,
+      canvas.height,
+      useStore.getState().selectedEntityId
+    );
+  };
+
+  const getWorldCoord = (clientX: number, clientY: number) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const cx = clientX - rect.left;
+    const cy = clientY - rect.top;
+    return {
+      wx: (cx - (rect.width / 2 + cam.current.x)) / cam.current.zoom + MAP_SIZE * TILE_SIZE / 2,
+      wy: (cy - (rect.height / 2 + cam.current.y)) / cam.current.zoom + MAP_SIZE * TILE_SIZE / 2
+    };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button === 2) isDragging.current = true;
+    if (e.button === 0) isBuilding.current = true;
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+
+    if (e.button === 0) {
+      const { wx, wy } = getWorldCoord(e.clientX, e.clientY);
+      let tx = Math.floor(wx / TILE_SIZE);
+      let ty = Math.floor(wy / TILE_SIZE);
+      lastCell.current = { x: tx, y: ty };
+
+      if (tool === 'cursor') {
+        const ent = engine.getEntityAt(tx, ty);
+        setSelectedEntityId(ent ? ent.id : null);
+      } else if (tool === 'deleter') {
+        engine.removeEntity(tx, ty);
+      } else {
+        const existing = engine.getEntityAt(tx, ty);
+        if (existing && existing.type === 'belt' && tool === 'belt') {
+          engine.changeBeltDir(existing, direction);
+        } else {
+          const added = engine.addEntity(tool as any, tx, ty, direction);
+          if (!added && !existing) {
+            engine.notifications.push({ text: 'Cannot place here', x: wx, y: wy, life: 60 });
+          }
+        }
+      }
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (isDragging.current) {
+      cam.current.x += e.clientX - lastMouse.current.x;
+      cam.current.y += e.clientY - lastMouse.current.y;
+    } else if (isBuilding.current && tool === 'belt') {
+      const { wx, wy } = getWorldCoord(e.clientX, e.clientY);
+      let tx = Math.floor(wx / TILE_SIZE);
+      let ty = Math.floor(wy / TILE_SIZE);
+      
+      const lc = lastCell.current;
+      if (lc && (lc.x !== tx || lc.y !== ty)) {
+        // Dragged into a new cell.
+        // Calculate direction from last cell to new cell
+        let dx = tx - lc.x;
+        let dy = ty - lc.y;
+        
+        let newDir = direction;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          newDir = dx > 0 ? 1 : 3;
+        } else {
+          newDir = dy > 0 ? 2 : 0;
+        }
+        
+        // Update old cell only if it's empty or already a belt
+        const oldEnt = engine.getEntityAt(lc.x, lc.y);
+        if (!oldEnt || oldEnt.type === 'belt') {
+          if (oldEnt && oldEnt.type === 'belt') {
+            engine.changeBeltDir(oldEnt, newDir);
+          } else {
+            engine.addEntity('belt', lc.x, lc.y, newDir);
+          }
+        }
+
+        // Place a belt in the new cell matching that direction if possible
+        const newEnt = engine.getEntityAt(tx, ty);
+        if (!newEnt || newEnt.type === 'belt') {
+          if (newEnt && newEnt.type === 'belt') {
+            engine.changeBeltDir(newEnt, newDir);
+          } else {
+            engine.addEntity('belt', tx, ty, newDir);
+          }
+        }
+
+        lastCell.current = { x: tx, y: ty };
+      }
+    } else if (isBuilding.current && tool === 'deleter') {
+      const { wx, wy } = getWorldCoord(e.clientX, e.clientY);
+      let tx = Math.floor(wx / TILE_SIZE);
+      let ty = Math.floor(wy / TILE_SIZE);
+      engine.removeEntity(tx, ty);
+    }
+    
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerUp = () => {
+    isDragging.current = false;
+    isBuilding.current = false;
+    lastCell.current = null;
+  };
+  
+  const handleWheel = (e: React.WheelEvent) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    
+    // Zoom toward cursor
+    const c = cam.current;
+    const oldZoom = c.zoom;
+    const newZoom = Math.max(0.2, Math.min(3, c.zoom - e.deltaY * 0.001));
+    
+    // We want the point under cursor to remain at the same screen coords
+    const relX = cx - rect.width / 2;
+    const relY = cy - rect.height / 2;
+    
+    cam.current = {
+      zoom: newZoom,
+      x: relX - (relX - c.x) * (newZoom / oldZoom),
+      y: relY - (relY - c.y) * (newZoom / oldZoom)
+    };
+  };
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current) {
+        canvasRef.current.width = canvasRef.current.clientWidth;
+        canvasRef.current.height = canvasRef.current.clientHeight;
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <canvas 
+      ref={canvasRef}
+      className="w-full h-full cursor-crosshair outline-none"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onWheel={handleWheel}
+      onContextMenu={e => e.preventDefault()}
+    />
+  );
+}

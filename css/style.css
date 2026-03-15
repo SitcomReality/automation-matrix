@@ -1,0 +1,232 @@
+:root {
+    --bg-darker: #0B0C10;
+    --bg-dark: #1F2833;
+    --accent: #66FCF1;
+    --accent-dark: #45A29E;
+    --text: #C5C6C7;
+    --danger: #E94560;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-darker);
+    color: var(--text);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+}
+
+#app {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+.sidebar {
+    background-color: var(--bg-darker);
+    border-color: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 8px;
+    z-index: 10;
+}
+
+.sidebar.left {
+    width: 100px;
+    border-right: 2px solid var(--bg-dark);
+}
+
+.sidebar.right {
+    width: 200px;
+    border-left: 2px solid var(--bg-dark);
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    text-align: center;
+    font-weight: 900;
+    color: var(--accent);
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--bg-dark);
+    font-size: 14px;
+    letter-spacing: -0.5px;
+}
+
+.tool-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tool-btn {
+    background: var(--bg-darker);
+    border: 2px solid var(--bg-dark);
+    color: var(--text);
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.tool-btn:hover {
+    background: var(--bg-dark);
+}
+
+.tool-btn.active {
+    background: var(--accent-dark);
+    color: var(--bg-darker);
+    border-color: var(--accent);
+}
+
+.tool-btn span {
+    font-size: 9px;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.direction-selector {
+    margin-top: auto;
+    border-top: 2px solid var(--bg-dark);
+    padding-top: 8px;
+}
+
+.direction-selector .label {
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+.dir-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.dir-row {
+    display: flex;
+    gap: 4px;
+}
+
+.dir-btn {
+    width: 32px;
+    height: 32px;
+    background: var(--bg-darker);
+    border: 1px solid var(--bg-dark);
+    color: var(--text);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.dir-btn.active {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+#game-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+#game-canvas {
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+}
+
+.hud-overlay {
+    position: absolute;
+    pointer-events: none;
+    padding: 8px 16px;
+    background: var(--bg-dark);
+    border: 2px solid var(--accent-dark);
+    border-radius: 4px;
+    font-weight: 900;
+    color: var(--accent);
+}
+
+#currency-display {
+    top: 16px;
+    left: 16px;
+    font-size: 24px;
+}
+
+.hud-overlay.bottom {
+    bottom: 16px;
+    left: 16px;
+    font-size: 10px;
+    background: rgba(11, 12, 16, 0.8);
+    border: none;
+    color: var(--text);
+    opacity: 0.6;
+}
+
+.matrix-container {
+    background: var(--bg-darker);
+    border: 2px solid var(--bg-dark);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.matrix-header {
+    font-size: 10px;
+    font-weight: bold;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+}
+
+.matrix-cell {
+    width: 30px;
+    height: 30px;
+    background: var(--bg-dark);
+    border-radius: 2px;
+    transition: background 0.1s;
+}
+
+.matrix-cell.active {
+    background: var(--danger);
+}
+
+.tutorial-box {
+    margin-top: 16px;
+    padding: 12px;
+    border: 2px solid var(--bg-dark);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.tutorial-header {
+    font-weight: bold;
+    color: var(--accent-dark);
+    border-bottom: 1px solid var(--bg-dark);
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+}
+
+.tutorial-box p {
+    margin-bottom: 8px;
+}
+
+.accent { color: var(--accent); }
+.cyan { color: var(--accent-dark); }
+.red { color: var(--danger); }
