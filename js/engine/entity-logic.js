@@ -20,7 +20,9 @@ export function processEntity(engine, e) {
     // Blender logic
     if (e.type === 'blender') {
         if (!e.state || !e.state.grid) return;
-        if (engine.tick % 2 === 0) {
+
+        // Simple falling particle simulation (only when not actively blending)
+        if (!e.state.blending && engine.tick % 2 === 0) {
             for (let y = 18; y >= 0; y--) {
                 for (let x = 0; x < 20; x++) {
                     const val = e.state.grid[y][x];
@@ -42,6 +44,7 @@ export function processEntity(engine, e) {
             }
         }
 
+        // Accept up to two unique item types into the blender
         if (!e.state.blending) {
             for (let i = engine.items.length - 1; i >= 0; i--) {
                 const item = engine.items[i];
@@ -59,31 +62,38 @@ export function processEntity(engine, e) {
             }
         }
 
+        // Start blending once two unique resources are inside
         if (e.state.items.length === 2 && !e.state.blending) {
             e.state.blending = true;
+            // ~500ms at 60fps
             e.state.blendTimer = 30;
 
-            // Clear particles at the start of blending so they "disappear" into the mix
+            // Clear particles at the start of the blend animation
             e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
+
+            // Compute blended color from the two resource types
+            const typeToColor = (t) => {
+                if (t === 'juice') return [233, 69, 96];
+                if (t === 'ore') return [102, 252, 241];
+                if (t === 'refined-ore') return [102, 252, 241];
+                if (t === 'refined-juice') return [233, 69, 96];
+                if (t === 'particle') return [230, 126, 34];
+                if (t === 'blend') return [245, 208, 76];
+                return [241, 196, 15];
+            };
+            const c1 = typeToColor(e.state.items[0]);
+            const c2 = typeToColor(e.state.items[1]);
+            const mix = [
+                Math.round((c1[0] + c2[0]) / 2),
+                Math.round((c1[1] + c2[1]) / 2),
+                Math.round((c1[2] + c2[2]) / 2)
+            ];
+            e.state.blendColor = `rgba(${mix[0]}, ${mix[1]}, ${mix[2]}, 0.8)`;
         }
 
+        // Blending phase – just count down; visual handled in renderer
         if (e.state.blending) {
             e.state.blendTimer--;
-            if (engine.tick % 2 === 0) {
-                for (let j = 0; j < 5; j++) {
-                    let rx = Math.floor(Math.random() * 20);
-                    let ry = Math.floor(Math.random() * 20);
-                    if (e.state.grid[ry][rx] > 0) {
-                        let nx = (rx + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
-                        let ny = (ry + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
-                        if (e.state.grid[ny][nx] === 0) {
-                            e.state.grid[ny][nx] = e.state.grid[ry][rx];
-                            e.state.grid[ry][rx] = 0;
-                        }
-                    }
-                }
-            }
-
             if (e.state.blendTimer <= 0) {
                 const nx = e.x + 2, ny = e.y;
                 const destE = engine.getEntityAt(nx, ny);
@@ -93,6 +103,7 @@ export function processEntity(engine, e) {
                         e.state.items = [];
                         e.state.blending = false;
                         e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
+                        e.state.blendColor = null;
                         engine.items.push({ id: Math.random().toString(), type: 'blend', x: nx, y: ny, progress: 0, outDir: destE.dir });
                     }
                 }
