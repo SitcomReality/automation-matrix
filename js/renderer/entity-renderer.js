@@ -10,6 +10,38 @@ const drawChevron = (ctx, color) => {
     ctx.stroke();
 };
 
+const drawMachineIndicator = (ctx, w, h, dir) => {
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(dir * Math.PI / 2);
+    
+    const arrowSize = 6;
+    const yPos = -h / 2;
+    
+    // Glow effect for the indicator
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = '#66FCF1';
+    ctx.fillStyle = '#66FCF1';
+    
+    // Modern triangular indicator
+    ctx.beginPath();
+    ctx.moveTo(-arrowSize, yPos + 2);
+    ctx.lineTo(arrowSize, yPos + 2);
+    ctx.lineTo(0, yPos - 6);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Base line for the port
+    ctx.strokeStyle = '#66FCF1';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-arrowSize - 2, yPos);
+    ctx.lineTo(arrowSize + 2, yPos);
+    ctx.stroke();
+    
+    ctx.restore();
+};
+
 export function drawEntity(ctx, engine, state, e) {
     if (!e) return;
     ctx.save();
@@ -67,12 +99,7 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.fill();
         ctx.restore();
 
-        ctx.save();
-        ctx.translate(TILE_SIZE / 2, TILE_SIZE / 2);
-        ctx.rotate(e.dir * Math.PI / 2);
-        ctx.fillStyle = '#7F8C8D';
-        ctx.fillRect(-3, 10, 6, 6);
-        ctx.restore();
+        drawMachineIndicator(ctx, TILE_SIZE, TILE_SIZE, e.dir);
     } else if (e.type === 'sand-processor') {
         if (!e.state || !e.state.grid) {
             ctx.restore();
@@ -101,10 +128,7 @@ export function drawEntity(ctx, engine, state, e) {
                 }
             }
         }
-        ctx.fillStyle = '#34495E';
-        ctx.beginPath();
-        ctx.moveTo(w / 2 - 15, h - 25); ctx.lineTo(w / 2 + 15, h - 25); ctx.lineTo(w / 2 + 8, h - 10); ctx.lineTo(w / 2 - 8, h - 10);
-        ctx.fill();
+        drawMachineIndicator(ctx, w, h, e.dir);
     } else if (e.type === 'blender') {
         if (!e.state || !e.state.grid) {
             ctx.restore();
@@ -148,13 +172,8 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.strokeStyle = '#BDC3C7'; ctx.lineWidth = 4;
         ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
         
-        // Output pointer
-        ctx.rotate(e.dir * Math.PI / 2);
-        ctx.fillStyle = '#7F8C8D';
-        ctx.beginPath();
-        ctx.moveTo(-10, 40); ctx.lineTo(10, 40); ctx.lineTo(0, 50);
-        ctx.fill();
         ctx.restore();
+        drawMachineIndicator(ctx, w, h, e.dir);
     } else if (e.type === 'stitcher') {
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
@@ -171,15 +190,7 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.fillRect(8, h - 10, (w - 16) * pct, 4);
         }
 
-        // Direction Indicator (Output Port)
-        ctx.save();
-        ctx.translate(w / 2, h / 2);
-        ctx.rotate(e.dir * Math.PI / 2);
-        ctx.fillStyle = '#D7BDE2';
-        ctx.beginPath();
-        ctx.moveTo(-10, 20); ctx.lineTo(10, 20); ctx.lineTo(0, 35);
-        ctx.fill();
-        ctx.restore();
+        drawMachineIndicator(ctx, w, h, e.dir);
     } else if (e.type === 'hue-rotator') {
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
@@ -188,9 +199,8 @@ export function drawEntity(ctx, engine, state, e) {
         
         ctx.save();
         ctx.translate(w / 2, h / 2);
-        ctx.rotate(e.dir * Math.PI / 2);
         
-        // Glass prism effect
+        // Glass prism effect (Static, doesn't rotate with dir)
         ctx.beginPath();
         ctx.moveTo(0, -10); ctx.lineTo(10, 8); ctx.lineTo(-10, 8);
         ctx.closePath();
@@ -207,6 +217,7 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.stroke();
         }
         ctx.restore();
+        drawMachineIndicator(ctx, w, h, e.dir);
     } else if (e.type === 'crystallizer') {
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
@@ -244,13 +255,8 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.fill();
         }
         
-        // Port marker
-        ctx.rotate(e.dir * Math.PI / 2);
-        ctx.fillStyle = '#66FCF1';
-        ctx.beginPath();
-        ctx.moveTo(-8, 40); ctx.lineTo(8, 40); ctx.lineTo(0, 48);
-        ctx.fill();
         ctx.restore();
+        drawMachineIndicator(ctx, w, h, e.dir);
     } else if (e.type === 'slot-machine') {
         if (!e.state) {
             ctx.restore();
