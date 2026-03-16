@@ -111,38 +111,39 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.fillStyle = '#5D6D7E';
         ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2); ctx.fill();
         
-        // Background color logic: derived from blend if 2 types present, else dark
-        if (e.state.itemTypes.length === 2) {
-            ctx.fillStyle = e.state.blendColor || '#0B0C10';
-        } else {
-            ctx.fillStyle = '#0B0C10';
-        }
+        // Background color logic: black by default, changes to blend color when processing
+        ctx.fillStyle = e.state.blending ? (e.state.blendColor || '#0B0C10') : '#000000';
         ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 10, 0, Math.PI * 2); ctx.fill();
         
-        const gridW = w - 24; const gridH = h - 24; const cellW = gridW / 20; const cellH = gridH / 20;
-        const startX = 12; const startY = 12;
-        for (let sy = 0; sy < 20; sy++) {
-            for (let sx = 0; sx < 20; sx++) {
-                const val = e.state.grid[sy][sx];
-                if (val > 0) {
-                    const it = e.state.itemTypes[val - 1];
-                    if (it) {
-                        ctx.fillStyle = `hsl(${it.h}, ${it.s}%, ${it.l}%)`;
-                        ctx.fillRect(startX + sx * cellW, startY + sy * cellH, cellW + 0.5, cellH + 0.5);
+        // Only draw particles if not blending
+        if (!e.state.blending) {
+            const gridW = w - 24; const gridH = h - 24; const cellW = gridW / 20; const cellH = gridH / 20;
+            const startX = 12; const startY = 12;
+            for (let sy = 0; sy < 20; sy++) {
+                for (let sx = 0; sx < 20; sx++) {
+                    const val = e.state.grid[sy][sx];
+                    if (val > 0) {
+                        const it = e.state.itemTypes[val - 1];
+                        if (it) {
+                            ctx.fillStyle = `hsl(${it.h}, ${it.s}%, ${it.l}%)`;
+                            ctx.fillRect(startX + sx * cellW, startY + sy * cellH, cellW + 0.5, cellH + 0.5);
+                        }
                     }
                 }
             }
         }
-        if (e.state.itemTypes.length > 0) {
-            ctx.save();
-            ctx.translate(w / 2, h / 2);
-            const rotSpeed = e.state.blending ? 0.4 : 0.05;
-            const t = e.state.animTick !== undefined ? e.state.animTick : engine.tick;
+
+        // Draw central wheel
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        if (e.state.blending) {
+            const rotSpeed = 0.4;
+            const t = e.state.animTick || 0;
             ctx.rotate(t * rotSpeed);
-            ctx.strokeStyle = '#BDC3C7'; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
-            ctx.restore();
         }
+        ctx.strokeStyle = '#BDC3C7'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
+        ctx.restore();
         ctx.fillStyle = '#7F8C8D'; ctx.fillRect(w - 6, h / 2 - 8, 6, 16);
     } else if (e.type === 'stitcher') {
         const w = e.width * TILE_SIZE;

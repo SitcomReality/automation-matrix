@@ -21,12 +21,12 @@ export function processBlender(engine, e) {
     const blocked = engine.items.some(it => it.x === outX && it.y === outY && it.progress < 0.5);
     const canOutput = destE && ['belt', 'splitter', 'combiner'].includes(destE.type) && !blocked;
 
-    if (canOutput) {
+    if (e.state.blending) {
         e.state.animTick = (e.state.animTick || 0) + 1;
     }
 
-    // Particle physics
-    if (canOutput && engine.tick % 2 === 0) {
+    // Particle physics (only when not blending)
+    if (!e.state.blending && engine.tick % 2 === 0) {
         for (let y = 18; y >= 0; y--) {
             for (let x = 0; x < 20; x++) {
                 const val = e.state.grid[y][x];
@@ -77,7 +77,9 @@ export function processBlender(engine, e) {
 
     if (e.state.itemCounts[0] === 2 && e.state.itemCounts[1] === 2 && !e.state.blending && canOutput) {
         e.state.blending = true;
-        e.state.blendTimer = 90;
+        e.state.blendTimer = 30; // 500ms @ 60fps
+        e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0)); // Particles disappear
+        
         const itemA = e.state.itemTypes[0];
         const itemB = e.state.itemTypes[1];
         
@@ -91,31 +93,14 @@ export function processBlender(engine, e) {
     }
 
     if (e.state.blending) {
-        if (canOutput) {
-            e.state.blendTimer--;
-            
-            if (engine.tick % 2 === 0) {
-                for (let j = 0; j < 15; j++) {
-                    let rx = Math.floor(Math.random() * 20);
-                    let ry = Math.floor(Math.random() * 20);
-                    if (e.state.grid[ry][rx] > 0) {
-                        let pnx = (rx + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
-                        let pny = (ry + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
-                        if (e.state.grid[pny][pnx] === 0) {
-                            e.state.grid[pny][pnx] = e.state.grid[ry][rx];
-                            e.state.grid[ry][rx] = 0;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (e.state.blendTimer <= 0 && canOutput) {
+        e.state.blendTimer--;
+        
+        if (e.state.blendTimer <= 0) {
             const res = e.state.blendedResult;
             e.state.itemTypes = [];
             e.state.itemCounts = [0, 0];
             e.state.blending = false;
-            e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
+            // No need to clear grid here as we cleared it at the start of blending
             engine.items.push({ 
                 id: Math.random().toString(), 
                 type: 'mystic',
