@@ -1,47 +1,42 @@
 import { TILE_SIZE } from '../constants.js';
 
 export function drawItem(ctx, engine, item) {
-    let dx = item.x * TILE_SIZE + TILE_SIZE / 2;
-    let dy = item.y * TILE_SIZE + TILE_SIZE / 2;
+    const cx = item.x * TILE_SIZE + TILE_SIZE / 2;
+    const cy = item.y * TILE_SIZE + TILE_SIZE / 2;
+    let dx = cx;
+    let dy = cy;
     let scaleX = 1, scaleY = 1;
 
     const e = engine.getEntityAt(item.x, item.y);
     if (e && (e.type === 'belt' || e.type === 'splitter' || e.type === 'combiner')) {
-        let outDir = item.outDir !== undefined ? item.outDir : e.dir;
-        const offset = (item.progress - 0.5) * TILE_SIZE;
+        const inDir = item.inDir !== undefined ? item.inDir : e.dir;
+        const outDir = item.outDir !== undefined ? item.outDir : e.dir;
         
-        // Primary movement axis
-        if (outDir === 0) dy -= offset;
-        else if (outDir === 1) dx += offset;
-        else if (outDir === 2) dy += offset;
-        else if (outDir === 3) dx -= offset;
+        // Direction vectors
+        const dirs = [
+            { x: 0, y: -1 }, // N
+            { x: 1, y: 0 },  // E
+            { x: 0, y: 1 },  // S
+            { x: -1, y: 0 }  // W
+        ];
 
-        // Perpendicular adjustment for turns
-        if (item.progress < 0.5 && item.inDir !== undefined && item.inDir !== outDir) {
-            const perpFactor = (1 - (item.progress / 0.5));
-            const perpOffset = perpFactor * (TILE_SIZE / 2);
-            
-            // Check if turn is perpendicular
-            const isVertical = (outDir === 0 || outDir === 2);
-            const inIsVertical = (item.inDir === 0 || item.inDir === 2);
-            
-            if (isVertical && !inIsVertical) {
-                // Item entered from E/W, moving N/S
-                // If inDir was 1 (East), it came from the West side (-X)
-                // If inDir was 3 (West), it came from the East side (+X)
-                dx += (item.inDir === 1 ? -perpOffset : perpOffset);
-            } else if (!isVertical && inIsVertical) {
-                // Item entered from N/S, moving E/W
-                // If inDir was 0 (North), it came from the South side (+Y) (Wait, check directions)
-                // DIR: 0=N (-Y), 1=E (+X), 2=S (+Y), 3=W (-X)
-                // If inDir was 2 (South), it was moving South, so it entered from the North (-Y)
-                // If inDir was 0 (North), it was moving North, so it entered from the South (+Y)
-                dy += (item.inDir === 2 ? -perpOffset : perpOffset);
-            }
+        if (item.progress < 0.5) {
+            // First half: from entry edge to center
+            const t = item.progress / 0.5;
+            const entryVec = dirs[inDir];
+            dx = cx + (entryVec.x * (t * 0.5 - 0.5)) * TILE_SIZE;
+            dy = cy + (entryVec.y * (t * 0.5 - 0.5)) * TILE_SIZE;
+        } else {
+            // Second half: from center to exit edge
+            const t = (item.progress - 0.5) / 0.5;
+            const exitVec = dirs[outDir];
+            dx = cx + (exitVec.x * (t * 0.5)) * TILE_SIZE;
+            dy = cy + (exitVec.y * (t * 0.5)) * TILE_SIZE;
         }
 
         const bounce = Math.sin(item.progress * Math.PI);
-        if (outDir === 0 || outDir === 2) {
+        const currentDir = item.progress < 0.5 ? inDir : outDir;
+        if (currentDir === 0 || currentDir === 2) {
             scaleX = 1 - bounce * 0.2;
             scaleY = 1 + bounce * 0.4;
         } else {

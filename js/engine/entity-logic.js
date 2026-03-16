@@ -32,8 +32,18 @@ export function processEntity(engine, e) {
             const ny = e.y;
             const destE = engine.getEntityAt(nx, ny);
             if (destE && ['belt', 'splitter', 'combiner'].includes(destE.type)) {
-                if (!engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
-                    engine.items.push({ id: Math.random().toString(), type: res, x: nx, y: ny, progress: 0, outDir: destE.dir, inDir: 1 });
+                // Check if the destination entry slot is clear (at least 1.0 distance from others)
+                const blocked = engine.items.find(i => i.x === nx && i.y === ny && i.progress < 1.0);
+                if (!blocked) {
+                    engine.items.push({ 
+                        id: Math.random().toString(), 
+                        type: res, 
+                        x: nx, 
+                        y: ny, 
+                        progress: 0, 
+                        inDir: 1, // Miner outputs East
+                        outDir: destE.dir 
+                    });
                 }
             }
         }

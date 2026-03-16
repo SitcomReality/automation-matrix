@@ -25,65 +25,71 @@ export function updateItemMovement(engine) {
     for (let i = 0; i < engine.items.length; i++) {
         let item = engine.items[i];
         const e = engine.getEntityAt(item.x, item.y);
-        if (!e || (e.type !== 'belt' && e.type !== 'splitter' && e.type !== 'combiner')) continue;
+        
+        // If not on a transport building, skip movement logic
+        if (!e || !['belt', 'splitter', 'combiner'].includes(e.type)) continue;
 
-        if (item.outDir === undefined) {
-            assignOutput(e, item);
-        }
+        // Ensure outDir and inDir are set
+        if (item.outDir === undefined) assignOutput(e, item);
+        if (item.inDir === undefined) item.inDir = item.outDir;
 
         const { nx, ny } = getBeltOutput(e, item);
         let maxProgress = 1.0;
 
-        const itemsOnSame = engine.items.filter(
+        // Check for items ahead in the same cell
+        const itemsAheadInSame = engine.items.filter(
             it => it.x === item.x && it.y === item.y && it !== item && it.progress > item.progress
         );
         
-        if (itemsOnSame.length > 0) {
-            const nextItem = itemsOnSame.reduce((min, it) => (it.progress < min.progress ? it : min));
-            maxProgress = nextItem.progress - 0.5;
+        if (itemsAheadInSame.length > 0) {
+            const nextItem = itemsAheadInSame.reduce((min, it) => (it.progress < min.progress ? it : min));
+            maxProgress = nextItem.progress - 1.0; // Maintain 1.0 spacing
         } else {
+            // Check for items in the destination cell
             const destE = engine.getEntityAt(nx, ny);
             if (destE) {
                 if (['belt', 'splitter', 'combiner'].includes(destE.type)) {
-                    const itemsOnNext = engine.items.filter(it => it.x === nx && it.y === ny);
-                    if (itemsOnNext.length > 0) {
-                        const lastItem = itemsOnNext.reduce((min, it) => (it.progress < min.progress ? it : min));
-                        maxProgress = lastItem.progress + 0.5;
+                    const itemsInNext = engine.items.filter(it => it.x === nx && it.y === ny);
+                    if (itemsInNext.length > 0) {
+                        const tailItem = itemsInNext.reduce((min, it) => (it.progress < min.progress ? it : min));
+                        maxProgress = tailItem.progress; // If tail is at 0.2, we can only go to 0.2 in current
                     } else {
-                        maxProgress = 2.0;
+                        maxProgress = 2.0; // Room to move into next cell
                     }
-                } else if (destE.type === 'sand-processor' && nx === destE.x + 1 && ny === destE.y) {
-                    maxProgress = canAcceptItem(destE, item.type) ? 2.0 : 1.0;
-                } else if (destE.type === 'slot-machine' && nx >= destE.x && nx < destE.x + 2 && ny >= destE.y && ny < destE.y + 2) {
-                    maxProgress = canAcceptItem(destE, item.type) ? 2.0 : 1.0;
-                } else if (destE.type === 'blender' && nx >= destE.x && nx < destE.x + 2 && ny >= destE.y && ny < destE.y + 2) {
-                    maxProgress = canAcceptItem(destE, item.type) ? 2.0 : 1.0;
+                } else if (['sand-processor', 'slot-machine', 'blender'].includes(destE.type)) {
+                    // Check specific input points for machines
+                    let isInputPoint = false;
+                    if (destE.type === 'sand-processor') isInputPoint = (nx === destE.x + 1 && ny === destE.y);
+                    else isInputPoint = (nx >= destE.x && nx < destE.x + destE.width && ny >= destE.y && ny < destE.y + destE.height);
+                    
+                    if (isInputPoint) {
+                        maxProgress = canAcceptItem(destE, item.type) ? 2.0 : 1.0;
+                    } else {
+                        maxProgress = 1.0;
+                    }
                 } else {
-                    maxProgress = 1.0;
+                    maxProgress = 1.0; // Blocked by non-transport building
                 }
             } else {
-                maxProgress = 1.0;
+                maxProgress = 1.0; // Blocked by empty space
             }
         }
 
-        if (item.progress + speed <= maxProgress) {
-            item.progress += speed;
-        } else {
+        // Clamp movement
+        if (item.progress < maxProgress) {
             item.progress = Math.min(item.progress + speed, maxProgress);
         }
 
-        if (maxProgress <= 1.0 && item.progress > maxProgress) {
-            item.progress = maxProgress;
-        }
-
+        // Transition to next cell
         if (item.progress >= 1.0) {
             const destE = engine.getEntityAt(nx, ny);
             if (destE) {
                 if (['belt', 'splitter', 'combiner'].includes(destE.type)) {
-                    item.inDir = item.outDir;
+                    const oldOutDir = item.outDir;
                     item.x = nx;
                     item.y = ny;
                     item.progress -= 1.0;
+                    item.inDir = oldOutDir;
                     assignOutput(destE, item);
                 } else if (['sand-processor', 'slot-machine', 'blender'].includes(destE.type)) {
                     if (canAcceptItem(destE, item.type)) {
