@@ -137,7 +137,8 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.save();
             ctx.translate(w / 2, h / 2);
             const rotSpeed = e.state.blending ? 0.4 : 0.05;
-            ctx.rotate(engine.tick * rotSpeed);
+            const t = e.state.animTick !== undefined ? e.state.animTick : engine.tick;
+            ctx.rotate(t * rotSpeed);
             ctx.strokeStyle = '#BDC3C7'; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
             ctx.restore();

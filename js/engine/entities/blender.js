@@ -15,9 +15,18 @@ export function canBlenderAccept(e, item) {
 
 export function processBlender(engine, e) {
     if (!e.state || !e.state.grid) return;
-    
+
+    const outX = e.x + 2, outY = e.y;
+    const destE = engine.getEntityAt(outX, outY);
+    const blocked = engine.items.some(it => it.x === outX && it.y === outY && it.progress < 0.5);
+    const canOutput = destE && ['belt', 'splitter', 'combiner'].includes(destE.type) && !blocked;
+
+    if (canOutput) {
+        e.state.animTick = (e.state.animTick || 0) + 1;
+    }
+
     // Particle physics
-    if (engine.tick % 2 === 0) {
+    if (canOutput && engine.tick % 2 === 0) {
         for (let y = 18; y >= 0; y--) {
             for (let x = 0; x < 20; x++) {
                 const val = e.state.grid[y][x];
@@ -66,7 +75,7 @@ export function processBlender(engine, e) {
         }
     }
 
-    if (e.state.itemCounts[0] === 2 && e.state.itemCounts[1] === 2 && !e.state.blending) {
+    if (e.state.itemCounts[0] === 2 && e.state.itemCounts[1] === 2 && !e.state.blending && canOutput) {
         e.state.blending = true;
         e.state.blendTimer = 90;
         const itemA = e.state.itemTypes[0];
@@ -82,43 +91,38 @@ export function processBlender(engine, e) {
     }
 
     if (e.state.blending) {
-        e.state.blendTimer--;
-        
-        if (engine.tick % 2 === 0) {
-            for (let j = 0; j < 15; j++) {
-                let rx = Math.floor(Math.random() * 20);
-                let ry = Math.floor(Math.random() * 20);
-                if (e.state.grid[ry][rx] > 0) {
-                    let nx = (rx + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
-                    let ny = (ry + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
-                    if (e.state.grid[ny][nx] === 0) {
-                        e.state.grid[ny][nx] = e.state.grid[ry][rx];
-                        e.state.grid[ry][rx] = 0;
+        if (canOutput) {
+            e.state.blendTimer--;
+            
+            if (engine.tick % 2 === 0) {
+                for (let j = 0; j < 15; j++) {
+                    let rx = Math.floor(Math.random() * 20);
+                    let ry = Math.floor(Math.random() * 20);
+                    if (e.state.grid[ry][rx] > 0) {
+                        let pnx = (rx + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
+                        let pny = (ry + (Math.random() > 0.5 ? 1 : -1) + 20) % 20;
+                        if (e.state.grid[pny][pnx] === 0) {
+                            e.state.grid[pny][pnx] = e.state.grid[ry][rx];
+                            e.state.grid[ry][rx] = 0;
+                        }
                     }
                 }
             }
         }
 
-        if (e.state.blendTimer <= 0) {
-            const nx = e.x + 2, ny = e.y;
-            const destE = engine.getEntityAt(nx, ny);
-            if (destE && ['belt','splitter','combiner'].includes(destE.type)) {
-                const blocked = engine.items.find(it => it.x === nx && it.y === ny && it.progress < 0.5);
-                if (!blocked) {
-                    const res = e.state.blendedResult;
-                    e.state.itemTypes = [];
-                    e.state.itemCounts = [0, 0];
-                    e.state.blending = false;
-                    e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
-                    engine.items.push({ 
-                        id: Math.random().toString(), 
-                        type: 'mystic',
-                        h: res.h, s: res.s, l: res.l, sides: res.sides,
-                        x: nx, y: ny, progress: 0, outDir: destE.dir 
-                    });
-                    audioManager.play('money', 0.2);
-                }
-            }
+        if (e.state.blendTimer <= 0 && canOutput) {
+            const res = e.state.blendedResult;
+            e.state.itemTypes = [];
+            e.state.itemCounts = [0, 0];
+            e.state.blending = false;
+            e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
+            engine.items.push({ 
+                id: Math.random().toString(), 
+                type: 'mystic',
+                h: res.h, s: res.s, l: res.l, sides: res.sides,
+                x: outX, y: outY, progress: 0, outDir: destE.dir 
+            });
+            audioManager.play('money', 0.2);
         }
     }
 }
