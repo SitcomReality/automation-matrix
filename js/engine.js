@@ -2,6 +2,7 @@ import { MAP_SIZE } from './constants.js';
 import { generateTerrain, generateMap } from './engine/terrain.js';
 import { updateItemMovement } from './engine/item-logic.js';
 import { processEntity } from './engine/entity-logic.js';
+import { getInitialEntityState } from './engine/entity-factory.js';
 
 export class GameEngine {
     constructor(state) {
@@ -63,35 +64,14 @@ export class GameEngine {
     }
 
     addEntity(type, x, y, dir) {
-        let w = 1, h = 1;
-        let config = {};
-        if (type === 'sand-processor') { 
-            w = 3; h = 3; 
-            const grid = Array(30).fill(null).map(() => Array(30).fill(0));
-            for (let i = 7; i <= 22; i++) grid[15][i] = 2;
-            config = { grid, processTimer: 0 }; 
-        } else if (type === 'slot-machine') { 
-            w = 3; h = 3; 
-            config = { reels: [0,0,0], spinning: false, spinTime: 0 }; 
-        } else if (type === 'splitter') {
-            config = { cycle: 0 };
-        } else if (type === 'stitcher') {
-            w = 3; h = 3;
-            config = { buffer: [], processTimer: 0 };
-        } else if (type === 'blender') {
-            w = 3; h = 3;
-            const grid = Array(20).fill(null).map(() => Array(20).fill(0));
-            config = { itemTypes: [], itemCounts: [0, 0], grid, blendTimer: 0, blending: false };
-        } else if (type === 'hue-rotator') {
-            w = 3; h = 3;
-            config = { processingItem: null, processTimer: 0 };
-        } else if (type === 'crystallizer') {
-            w = 3; h = 3;
-            config = { processingItem: null, processTimer: 0 };
-        }
+        const { w, h, config } = getInitialEntityState(type);
         
         if (this.canPlace(x, y, w, h)) {
-            this.entities.push({ id: Math.random().toString(36).substr(2, 9), type, x, y, width: w, height: h, dir, state: config });
+            this.entities.push({ 
+                id: Math.random().toString(36).substr(2, 9), 
+                type, x, y, width: w, height: h, dir, 
+                state: config 
+            });
             return true;
         }
         return false;
