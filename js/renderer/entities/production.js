@@ -20,7 +20,7 @@ export function drawSandProcessor(ctx, engine, e) {
     const itemColor = item ? `hsl(${item.h}, ${item.s}%, ${item.l}%)` : '#66FCF1';
 
     const rotation = (e.state.phase === 'processing' ? engine.tick * 0.1 : engine.tick * 0.01);
-    drawDrum(ctx, w/2, h/2, 30, rotation, e.state.phase === 'processing' ? itemColor : '#45A29E');
+    drawDrum(ctx, w/2, h/2, 30, rotation, '#45A29E');
     
     if (e.state.phase === 'processing') {
         ctx.fillStyle = itemColor;
