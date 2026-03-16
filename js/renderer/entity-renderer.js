@@ -21,8 +21,8 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.strokeRect(0, 0, e.width * TILE_SIZE, e.height * TILE_SIZE);
     }
 
-    if (e.type === 'belt' || e.type === 'splitter' || e.type === 'combiner') {
-        ctx.fillStyle = e.type === 'splitter' ? '#B8860B' : e.type === 'combiner' ? '#6C3483' : '#2C3E50';
+    if (e.type === 'belt' || e.type === 'splitter') {
+        ctx.fillStyle = e.type === 'splitter' ? '#B8860B' : '#2C3E50';
         ctx.fillRect(2, 2, TILE_SIZE - 4, TILE_SIZE - 4);
         ctx.fillStyle = '#1B2631';
         ctx.fillRect(6, 6, TILE_SIZE - 12, TILE_SIZE - 12);
@@ -49,9 +49,6 @@ export function drawEntity(ctx, engine, state, e) {
 
         if (e.type === 'splitter') {
             ctx.fillStyle = '#F1C40F';
-            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
-        } else if (e.type === 'combiner') {
-            ctx.fillStyle = '#9B59B6';
             ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
         }
         ctx.restore(); // Final restore to exit belt-local context
@@ -137,6 +134,31 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.restore();
         }
         ctx.fillStyle = '#7F8C8D'; ctx.fillRect(w - 6, h / 2 - 8, 6, 16);
+    } else if (e.type === 'stitcher') {
+        const w = e.width * TILE_SIZE;
+        const h = e.height * TILE_SIZE;
+        ctx.fillStyle = '#4A235A';
+        ctx.fillRect(2, 2, w - 4, h - 4);
+        ctx.strokeStyle = '#6C3483';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(6, 6, w - 12, h - 12);
+
+        // Progress bar
+        if (e.state.processTimer > 0) {
+            const pct = 1 - (e.state.processTimer / 120);
+            ctx.fillStyle = '#BB8FCE';
+            ctx.fillRect(8, h - 10, (w - 16) * pct, 4);
+        }
+
+        // Symbols
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        ctx.rotate(e.dir * Math.PI / 2);
+        ctx.fillStyle = '#D7BDE2';
+        ctx.beginPath();
+        ctx.moveTo(-10, -5); ctx.lineTo(10, -5); ctx.lineTo(0, 10);
+        ctx.fill();
+        ctx.restore();
     } else if (e.type === 'slot-machine') {
         if (!e.state) {
             ctx.restore();

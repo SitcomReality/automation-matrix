@@ -18,13 +18,15 @@ export function canAcceptItem(e, item) {
     if (!e || !e.state) return false;
     
     if (e.type === 'sand-processor') {
-        const currentParticles = e.state.grid.flat().filter(v => v === 1).length;
-        return currentParticles < 150;
+        return !e.state.processingItem;
     }
     
     if (e.type === 'blender') {
-        // Blender accepts any item with HSL properties as long as it's not full
         return !e.state.blending && e.state.items.length < 2;
+    }
+    
+    if (e.type === 'stitcher') {
+        return e.state.buffer.length < 2 && e.state.processTimer === 0;
     }
     
     if (e.type === 'slot-machine') {
@@ -192,6 +194,70 @@ export function processEntity(engine, e) {
                 engine.state.addCurrency(final);
                 audioManager.play('money', 0.5);
                 engine.notifications.push({ text: `+$${Math.floor(final)}`, x: (e.x + 1) * TILE_SIZE, y: e.y * TILE_SIZE, life: 60 });
+            }
+        }
+    }
+
+    // Stitcher logic
+    if (e.type === 'stitcher') {
+        if (!e.state) return;
+        
+        // Pull items from grid into internal buffer
+        for (let i = engine.items.length - 1; i >= 0; i--) {
+            const item = engine.items[i];
+            if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
+                if (e.state.buffer.length < 2 && e.state.processTimer === 0) {
+                    e.state.buffer.push({...item});
+                    engine.items.splice(i, 1);
+                }
+            }
+        }
+
+        if (e.state.buffer.length === 2 && e.state.processTimer === 0) {
+            e.state.processTimer = 120; // 2 seconds at 60fps
+        }
+
+        if (e.state.processTimer > 0) {
+            e.state.processTimer--;
+            if (e.state.processTimer === 0) {
+                const [a, b] = e.state.buffer;
+                let nx, ny;
+                if (e.dir === 0) { nx = e.x; ny = e.y - 1; }
+                else if (e.dir === 1) { nx = e.x + e.width; ny = e.y; }
+                else if (e.dir === 2) { nx = e.x; ny = e.y + e.height; }
+                else { nx = e.x - 1; ny = e.y; }
+
+                const destE = engine.getEntityAt(nx, ny);
+                if (destE && ['belt', 'splitter'].includes(destE.type)) {
+                    const blocked = engine.items.find(it => it.x === nx && it.y === ny && it.progress < 0.5);
+                    if (!blocked) {
+                        // Increase complexity logic
+                        const maxSides = Math.max(a.sides, b.sides);
+                        let nextSides = maxSides;
+                        if (a.sides === b.sides) {
+                            if (maxSides === 3) nextSides = 4;
+                            else if (maxSides === 4) nextSides = 6;
+                            else if (maxSides === 6) nextSides = 8;
+                            else nextSides = 20; // Circle
+                        }
+
+                        engine.items.push({
+                            id: Math.random().toString(),
+                            type: 'stitched',
+                            h: blendHue(a.h, b.h),
+                            s: Math.max(a.s, b.s),
+                            l: Math.max(a.l, b.l),
+                            sides: nextSides,
+                            x: nx, y: ny, progress: 0, outDir: destE.dir
+                        });
+                        e.state.buffer = [];
+                        audioManager.play('place', 0.2);
+                    } else {
+                        e.state.processTimer = 1; // Retry next tick
+                    }
+                } else {
+                    e.state.processTimer = 1; // Retry next tick
+                }
             }
         }
     }

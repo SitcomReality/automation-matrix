@@ -74,6 +74,9 @@ export class GameEngine {
             config = { reels: [0,0,0], spinning: false, spinTime: 0 }; 
         } else if (type === 'splitter') {
             config = { cycle: 0 };
+        } else if (type === 'stitcher') {
+            w = 2; h = 1;
+            config = { buffer: [], processTimer: 0 };
         } else if (type === 'blender') {
             w = 2; h = 2;
             const grid = Array(20).fill(null).map(() => Array(20).fill(0));
@@ -119,7 +122,14 @@ export class GameEngine {
 
     changeBeltDir(e, dir) {
         if (e.dir !== dir) {
+            const oldDir = e.dir;
             e.dir = dir;
+            
+            // Handle multi-tile building rotations (Swap width/height if needed for non-square)
+            if (e.type === 'stitcher') {
+                [e.width, e.height] = [e.height, e.width];
+            }
+
             for (const item of this.items) {
                 if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
                     item.outDir = undefined;

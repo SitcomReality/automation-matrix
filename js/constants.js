@@ -12,10 +12,10 @@ export const TOOLS = [
     { id: 'miner', label: 'Miner', icon: 'Hammer' },
     { id: 'belt', label: 'Belt', icon: 'FastForward' },
     { id: 'splitter', label: 'Splitter', icon: 'GitPullRequest' },
-    { id: 'combiner', label: 'Combiner', icon: 'GitMerge' },
+    { id: 'stitcher', label: 'Stitcher', icon: 'Scissors' },
     { id: 'blender', label: 'Blender', icon: 'Blend' },
-    { id: 'sand-processor', label: 'Sand Proc', icon: 'Recycle' },
-    { id: 'slot-machine', label: 'Slot', icon: 'Target' },
+    { id: 'sand-processor', label: 'Polisher', icon: 'Sparkles' },
+    { id: 'slot-machine', label: 'Sacrifice', icon: 'Coins' },
     { id: 'deleter', label: 'Delete', icon: 'Trash2' }
 ];
 
