@@ -9,10 +9,36 @@ export function drawItem(ctx, engine, item) {
     if (e && (e.type === 'belt' || e.type === 'splitter' || e.type === 'combiner')) {
         let outDir = item.outDir !== undefined ? item.outDir : e.dir;
         const offset = (item.progress - 0.5) * TILE_SIZE;
+        
+        // Primary movement axis
         if (outDir === 0) dy -= offset;
-        if (outDir === 1) dx += offset;
-        if (outDir === 2) dy += offset;
-        if (outDir === 3) dx -= offset;
+        else if (outDir === 1) dx += offset;
+        else if (outDir === 2) dy += offset;
+        else if (outDir === 3) dx -= offset;
+
+        // Perpendicular adjustment for turns
+        if (item.progress < 0.5 && item.inDir !== undefined && item.inDir !== outDir) {
+            const perpFactor = (1 - (item.progress / 0.5));
+            const perpOffset = perpFactor * (TILE_SIZE / 2);
+            
+            // Check if turn is perpendicular
+            const isVertical = (outDir === 0 || outDir === 2);
+            const inIsVertical = (item.inDir === 0 || item.inDir === 2);
+            
+            if (isVertical && !inIsVertical) {
+                // Item entered from E/W, moving N/S
+                // If inDir was 1 (East), it came from the West side (-X)
+                // If inDir was 3 (West), it came from the East side (+X)
+                dx += (item.inDir === 1 ? -perpOffset : perpOffset);
+            } else if (!isVertical && inIsVertical) {
+                // Item entered from N/S, moving E/W
+                // If inDir was 0 (North), it came from the South side (+Y) (Wait, check directions)
+                // DIR: 0=N (-Y), 1=E (+X), 2=S (+Y), 3=W (-X)
+                // If inDir was 2 (South), it was moving South, so it entered from the North (-Y)
+                // If inDir was 0 (North), it was moving North, so it entered from the South (+Y)
+                dy += (item.inDir === 2 ? -perpOffset : perpOffset);
+            }
+        }
 
         const bounce = Math.sin(item.progress * Math.PI);
         if (outDir === 0 || outDir === 2) {

@@ -80,6 +80,7 @@ export function updateItemMovement(engine) {
             const destE = engine.getEntityAt(nx, ny);
             if (destE) {
                 if (['belt', 'splitter', 'combiner'].includes(destE.type)) {
+                    item.inDir = item.outDir;
                     item.x = nx;
                     item.y = ny;
                     item.progress -= 1.0;

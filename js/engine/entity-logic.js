@@ -33,7 +33,7 @@ export function processEntity(engine, e) {
             const destE = engine.getEntityAt(nx, ny);
             if (destE && ['belt', 'splitter', 'combiner'].includes(destE.type)) {
                 if (!engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
-                    engine.items.push({ id: Math.random().toString(), type: res, x: nx, y: ny, progress: 0, outDir: destE.dir });
+                    engine.items.push({ id: Math.random().toString(), type: res, x: nx, y: ny, progress: 0, outDir: destE.dir, inDir: 1 });
                 }
             }
         }
