@@ -1,0 +1,58 @@
+export function canSandProcessorAccept(e, item) {
+    return !e.state.processingItem;
+}
+
+export function processSandProcessor(engine, e) {
+    if (!e.state || !e.state.grid) return;
+    for (let i = engine.items.length - 1; i >= 0; i--) {
+        const item = engine.items[i];
+        if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3) {
+            if (canSandProcessorAccept(e, item)) {
+                e.state.processingItem = {...item};
+                engine.items.splice(i, 1);
+                for(let sx=9; sx<=19; sx++) { e.state.grid[0][sx] = 1; e.state.grid[1][sx] = 1; }
+                break;
+            }
+        }
+    }
+    
+    if (engine.tick % 2 === 0) {
+        for (let y = 28; y >= 0; y--) {
+            for (let x = 0; x < 30; x++) {
+                if (e.state.grid[y][x] === 1) {
+                    if (e.state.grid[y+1][x] === 0) {
+                        e.state.grid[y][x] = 0; e.state.grid[y+1][x] = 1;
+                    } else {
+                        let l = x > 0 && e.state.grid[y+1][x-1] === 0;
+                        let r = x < 29 && e.state.grid[y+1][x+1] === 0;
+                        if (l && r) { if (Math.random() > 0.5) { e.state.grid[y][x] = 0; e.state.grid[y+1][x-1] = 1; } else { e.state.grid[y][x] = 0; e.state.grid[y+1][x+1] = 1; } }
+                        else if (l) { e.state.grid[y][x] = 0; e.state.grid[y+1][x-1] = 1; }
+                        else if (r) { e.state.grid[y][x] = 0; e.state.grid[y+1][x+1] = 1; }
+                    }
+                }
+            }
+        }
+    }
+    let collected = 0;
+    for (let x = 12; x <= 17; x++) { if (e.state.grid[29][x] === 1) { e.state.grid[29][x] = 0; collected++; } }
+    if (collected > 0) {
+        e.state.processTimer += collected;
+        if (e.state.processTimer >= 30) {
+            let nx = e.x + 1, ny = e.y + 3;
+            const destE = engine.getEntityAt(nx, ny);
+            if (destE && ['belt', 'splitter', 'combiner'].includes(destE.type) && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
+                const original = e.state.processingItem;
+                engine.items.push({ 
+                    ...original,
+                    id: Math.random().toString(),
+                    s: Math.min(100, original.s + 15),
+                    l: Math.min(90, original.l + 10),
+                    x: nx, y: ny, progress: 0, outDir: destE.dir 
+                });
+                e.state.processTimer = 0;
+            } else {
+                e.state.processTimer = 30; 
+            }
+        }
+    }
+}
