@@ -9,7 +9,7 @@ import { particleManager } from './particles.js';
 // removed function drawSteamVent() {}
 // removed function drawArcLightning() {}
 
-import { drawBeltLike, drawMiner } from './entities/logistics.js';
+import { drawBeltLike, drawMiner, drawScrewConveyor } from './entities/logistics.js';
 import { 
     drawSandProcessor, drawBlender, drawStitcher, 
     drawHueRotator, drawCrystallizer, drawSlotMachine 
@@ -29,6 +29,7 @@ export function drawEntity(ctx, engine, state, e) {
     switch (e.type) {
         case 'belt':
         case 'splitter':       drawBeltLike(ctx, engine, e); break;
+        case 'screw-conveyor': drawScrewConveyor(ctx, engine, e); break;
         case 'miner':          drawMiner(ctx, engine, e); break;
         case 'sand-processor': drawSandProcessor(ctx, engine, e); break;
         case 'blender':        drawBlender(ctx, engine, e); break;

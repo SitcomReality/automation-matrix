@@ -11,6 +11,7 @@ export const TOOLS = [
     { id: 'cursor', label: 'Select', icon: 'MousePointer2' },
     { id: 'miner', label: 'Miner', icon: 'Hammer' },
     { id: 'belt', label: 'Belt', icon: 'FastForward' },
+    { id: 'screw-conveyor', label: 'Screw', icon: 'Activity' },
     { id: 'splitter', label: 'Splitter', icon: 'GitPullRequest' },
     { id: 'stitcher', label: 'Stitcher', icon: 'Scissors' },
     { id: 'blender', label: 'Blender', icon: 'Blend' },

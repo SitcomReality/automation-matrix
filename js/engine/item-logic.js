@@ -27,7 +27,10 @@ export function updateItemMovement(engine) {
         const e = engine.getEntityAt(item.x, item.y);
         
         // If not on a transport building, skip movement logic
-        if (!e || !['belt', 'splitter'].includes(e.type)) continue;
+        if (!e || !['belt', 'splitter', 'screw-conveyor'].includes(e.type)) continue;
+
+        const isScrew = e.type === 'screw-conveyor';
+        const moveSpeed = isScrew ? speed * 2 : speed;
 
         // Ensure outDir and inDir are set
         if (item.outDir === undefined) assignOutput(e, item);
@@ -76,14 +79,14 @@ export function updateItemMovement(engine) {
 
         // Clamp movement
         if (item.progress < maxProgress) {
-            item.progress = Math.min(item.progress + speed, maxProgress);
+            item.progress = Math.min(item.progress + moveSpeed, maxProgress);
         }
 
         // Transition to next cell
         if (item.progress >= 1.0) {
             const destE = engine.getEntityAt(nx, ny);
             if (destE) {
-                if (['belt', 'splitter'].includes(destE.type)) {
+                if (['belt', 'splitter', 'screw-conveyor'].includes(destE.type)) {
                     const oldOutDir = item.outDir;
                     item.x = nx;
                     item.y = ny;

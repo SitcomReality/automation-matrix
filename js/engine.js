@@ -64,7 +64,7 @@ export class GameEngine {
     }
 
     addEntity(type, x, y, dir) {
-        const { w, h, config } = getInitialEntityState(type);
+        const { w, h, config } = getInitialEntityState(type, dir);
         
         if (this.canPlace(x, y, w, h)) {
             this.entities.push({ 
@@ -117,7 +117,7 @@ export class GameEngine {
             e.dir = dir;
             
             // Handle multi-tile building rotations (Swap width/height if needed for non-square)
-            if (e.type === 'stitcher') {
+            if (e.type === 'stitcher' || e.type === 'screw-conveyor') {
                 [e.width, e.height] = [e.height, e.width];
             }
 

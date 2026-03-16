@@ -1,10 +1,14 @@
 import { MAP_SIZE } from '../constants.js';
 
-export function getInitialEntityState(type) {
+export function getInitialEntityState(type, dir = 2) {
     let w = 1, h = 1;
     let config = {};
 
     switch (type) {
+        case 'screw-conveyor':
+            w = (dir === 1 || dir === 3) ? 3 : 1;
+            h = (dir === 0 || dir === 2) ? 3 : 1;
+            break;
         case 'sand-processor':
             w = 3; h = 3;
             const sandGrid = Array(30).fill(null).map(() => Array(30).fill(0));
