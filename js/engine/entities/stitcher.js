@@ -9,7 +9,16 @@ export function canStitcherAccept(e, item, tx, ty) {
 
 export function processStitcher(engine, e) {
     if (!e.state) return;
-    
+    if (!e.state.phase) e.state.phase = 'idle';
+
+    if (e.state.processTimer > 0) {
+        e.state.anim = 1 - (e.state.processTimer / 120);
+        e.state.phase = 'pressing';
+    } else {
+        e.state.anim = 0;
+        e.state.phase = e.state.buffer.length > 0 ? 'filling' : 'idle';
+    }
+
     for (let i = engine.items.length - 1; i >= 0; i--) {
         const item = engine.items[i];
         if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
@@ -54,6 +63,7 @@ export function processStitcher(engine, e) {
                         x: nx, y: ny, progress: 0, outDir: destE.dir
                     });
                     e.state.buffer = [];
+                    e.state.phase = 'idle';
                     audioManager.play('place', 0.2);
                 } else {
                     e.state.processTimer = 1; // Blocked: wait
@@ -62,6 +72,7 @@ export function processStitcher(engine, e) {
                 // Invalid output: discard
                 e.state.buffer = [];
                 e.state.processTimer = 0;
+                e.state.phase = 'idle';
             }
         }
     }

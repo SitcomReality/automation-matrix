@@ -1,5 +1,79 @@
 import { TILE_SIZE } from '../constants.js';
 
+const drawGear = (ctx, x, y, radius, rotation, teeth = 8) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.fillStyle = '#45A29E';
+    ctx.beginPath();
+    for (let i = 0; i < teeth * 2; i++) {
+        const angle = (i * Math.PI) / teeth;
+        const r = i % 2 === 0 ? radius : radius * 0.7;
+        ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#1F2833';
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+};
+
+const drawPiston = (ctx, x, y, angle, length, extension, width = 12) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    
+    // Housing
+    ctx.fillStyle = '#1F2833';
+    ctx.fillRect(-width/2, 0, width, length);
+    ctx.strokeStyle = '#45A29E';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-width/2, 0, width, length);
+
+    // Rod
+    ctx.fillStyle = '#C5C6C7';
+    const rodExt = extension * length * 0.8;
+    ctx.fillRect(-width/4, -rodExt, width/2, rodExt + 2);
+    
+    // Head
+    ctx.fillStyle = '#66FCF1';
+    ctx.fillRect(-width/2 - 2, -rodExt - 4, width + 4, 6);
+    
+    ctx.restore();
+};
+
+const drawDrum = (ctx, x, y, radius, rotation, color = '#45A29E') => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    
+    // Outer shell
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI * 2) / 6;
+        ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // Inner spokes
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.5;
+    for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI * 2) / 6;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+};
+
 const drawChevron = (ctx, color) => {
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
@@ -101,33 +175,34 @@ export function drawEntity(ctx, engine, state, e) {
 
         drawMachineIndicator(ctx, TILE_SIZE, TILE_SIZE, e.dir);
     } else if (e.type === 'sand-processor') {
-        if (!e.state || !e.state.grid) {
-            ctx.restore();
-            return;
-        }
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
-        ctx.fillStyle = '#1A252F';
-        ctx.fillRect(2, 2, w - 4, h - 4);
-        ctx.fillStyle = '#34495E';
-        ctx.beginPath();
-        ctx.moveTo(w / 2 - 20, 10); ctx.lineTo(w / 2 + 20, 10); ctx.lineTo(w / 2 + 10, 20); ctx.lineTo(w / 2 - 10, 20);
-        ctx.fill();
         ctx.fillStyle = '#0B0C10';
-        ctx.fillRect(16, 25, w - 32, h - 50);
-        const gridW = w - 32; const gridH = h - 50; const cellW = gridW / 30; const cellH = gridH / 30;
-        for (let sy = 0; sy < 30; sy++) {
-            for (let sx = 0; sx < 30; sx++) {
-                const val = e.state.grid[sy][sx];
-                if (val === 1) {
-                    ctx.fillStyle = e.state.currentProcessingType === 'juice' ? '#E94560' : e.state.currentProcessingType === 'ore' ? '#66FCF1' : '#E67E22';
-                    ctx.fillRect(16 + sx * cellW, 25 + sy * cellH, cellW, cellH);
-                } else if (val === 2) {
-                    ctx.fillStyle = '#BDC3C7';
-                    ctx.fillRect(16 + sx * cellW, 25 + sy * cellH, cellW, cellH);
-                }
+        ctx.fillRect(2, 2, w - 4, h - 4);
+        
+        // Machine chassis
+        ctx.strokeStyle = '#1F2833';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(10, 10, w - 20, h - 20);
+
+        const anim = e.state.anim || 0;
+        const rotation = (e.state.phase === 'processing' ? engine.tick * 0.1 : engine.tick * 0.01);
+        
+        // Draw the Tumbler Drum
+        drawDrum(ctx, w/2, h/2, 30, rotation, e.state.phase === 'processing' ? '#66FCF1' : '#45A29E');
+        
+        // Grit particles inside drum
+        if (e.state.phase === 'processing') {
+            ctx.fillStyle = '#C5C6C7';
+            for(let i=0; i<8; i++) {
+                const angle = rotation + (i * Math.PI * 2 / 8) + Math.sin(engine.tick * 0.1 + i) * 0.2;
+                const r = 15 + Math.cos(engine.tick * 0.05 + i) * 10;
+                ctx.beginPath();
+                ctx.arc(w/2 + Math.cos(angle) * r, h/2 + Math.sin(angle) * r, 2, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
+
         drawMachineIndicator(ctx, w, h, e.dir);
     } else if (e.type === 'blender') {
         if (!e.state || !e.state.grid) {
@@ -177,17 +252,35 @@ export function drawEntity(ctx, engine, state, e) {
     } else if (e.type === 'stitcher') {
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
-        ctx.fillStyle = '#4A235A';
+        ctx.fillStyle = '#0B0C10';
         ctx.fillRect(2, 2, w - 4, h - 4);
-        ctx.strokeStyle = '#6C3483';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(6, 6, w - 12, h - 12);
 
-        // Progress bar
-        if (e.state.processTimer > 0) {
-            const pct = 1 - (e.state.processTimer / 120);
-            ctx.fillStyle = '#BB8FCE';
-            ctx.fillRect(8, h - 10, (w - 16) * pct, 4);
+        // Central Bed
+        ctx.fillStyle = '#1F2833';
+        ctx.fillRect(w/2 - 20, h/2 - 20, 40, 40);
+        ctx.strokeStyle = '#45A29E';
+        ctx.strokeRect(w/2 - 20, h/2 - 20, 40, 40);
+
+        const anim = e.state.anim || 0;
+        // Piston extension logic: squeeze in middle of animation
+        const extension = e.state.phase === 'pressing' ? Math.sin(anim * Math.PI) : 0;
+
+        // Draw four pressing pistons
+        drawPiston(ctx, 15, h/2, Math.PI/2, 25, extension);
+        drawPiston(ctx, w - 15, h/2, -Math.PI/2, 25, extension);
+        drawPiston(ctx, w/2, 15, Math.PI, 25, extension);
+        drawPiston(ctx, w/2, h - 15, 0, 25, extension);
+
+        // Sparks during peak compression
+        if (e.state.phase === 'pressing' && anim > 0.4 && anim < 0.6) {
+            ctx.fillStyle = '#FFF';
+            for(let i=0; i<5; i++) {
+                const rx = (Math.random() - 0.5) * 20;
+                const ry = (Math.random() - 0.5) * 20;
+                ctx.beginPath();
+                ctx.arc(w/2 + rx, h/2 + ry, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
 
         drawMachineIndicator(ctx, w, h, e.dir);

@@ -7,14 +7,18 @@ export function canSandProcessorAccept(e, item, tx, ty) {
 }
 
 export function processSandProcessor(engine, e) {
-    if (!e.state || !e.state.grid) return;
+    if (!e.state) return;
+
+    if (!e.state.phase) e.state.phase = 'idle';
+    e.state.anim = e.state.processTimer / 30;
+
     for (let i = engine.items.length - 1; i >= 0; i--) {
         const item = engine.items[i];
         if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
             if (canSandProcessorAccept(e, item, item.x, item.y)) {
                 e.state.processingItem = {...item};
+                e.state.phase = 'processing';
                 engine.items.splice(i, 1);
-                for(let sx=9; sx<=19; sx++) { e.state.grid[0][sx] = 1; e.state.grid[1][sx] = 1; }
                 break;
             }
         }
@@ -39,8 +43,8 @@ export function processSandProcessor(engine, e) {
     }
     let collected = 0;
     for (let x = 12; x <= 17; x++) { if (e.state.grid[29][x] === 1) { e.state.grid[29][x] = 0; collected++; } }
-    if (collected > 0) {
-        e.state.processTimer += collected;
+    if (e.state.phase === 'processing') {
+        e.state.processTimer += 0.2; // Constant processing speed for visual satisfaction
         if (e.state.processTimer >= 30) {
             const { nx, ny } = getMachineOutputCell(e);
             const destE = engine.getEntityAt(nx, ny);
@@ -58,6 +62,7 @@ export function processSandProcessor(engine, e) {
                     });
                     e.state.processTimer = 0;
                     e.state.processingItem = null;
+                    e.state.phase = 'idle';
                 } else {
                     e.state.processTimer = 30; // Blocked: wait
                 }
@@ -65,6 +70,7 @@ export function processSandProcessor(engine, e) {
                 // Invalid output: discard
                 e.state.processTimer = 0;
                 e.state.processingItem = null;
+                e.state.phase = 'idle';
             }
         }
     }

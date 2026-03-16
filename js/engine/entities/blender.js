@@ -30,6 +30,9 @@ export function processBlender(engine, e) {
 
     if (e.state.blending) {
         e.state.animTick = (e.state.animTick || 0) + 1;
+        e.state.anim = 1 - (e.state.blendTimer / 30);
+    } else {
+        e.state.anim = 0;
     }
 
     // Particle physics (only when not blending)

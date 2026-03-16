@@ -7,6 +7,12 @@ export function canHueRotatorAccept(e, item, tx, ty) {
 }
 
 export function processHueRotator(engine, e) {
+    if (e.state.processTimer > 0) {
+        e.state.anim = 1 - (e.state.processTimer / 40);
+    } else {
+        e.state.anim = 0;
+    }
+
     if (!e.state.processingItem) {
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
