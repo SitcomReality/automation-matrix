@@ -1,8 +1,8 @@
 import { getMachineOutputCell } from './utils.js';
 
-export function canSandProcessorAccept(e, item) {
+export function canSandProcessorAccept(e, item, tx, ty) {
     const { ox, oy } = getMachineOutputCell(e);
-    if (item.x === ox && item.y === oy) return false;
+    if (tx === ox && ty === oy) return false;
     return !e.state.processingItem;
 }
 
@@ -10,8 +10,8 @@ export function processSandProcessor(engine, e) {
     if (!e.state || !e.state.grid) return;
     for (let i = engine.items.length - 1; i >= 0; i--) {
         const item = engine.items[i];
-        if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3) {
-            if (canSandProcessorAccept(e, item)) {
+        if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
+            if (canSandProcessorAccept(e, item, item.x, item.y)) {
                 e.state.processingItem = {...item};
                 engine.items.splice(i, 1);
                 for(let sx=9; sx<=19; sx++) { e.state.grid[0][sx] = 1; e.state.grid[1][sx] = 1; }

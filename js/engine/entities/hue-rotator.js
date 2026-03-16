@@ -1,8 +1,8 @@
 import { getMachineOutputCell } from './utils.js';
 
-export function canHueRotatorAccept(e, item) {
+export function canHueRotatorAccept(e, item, tx, ty) {
     const { ox, oy } = getMachineOutputCell(e);
-    if (item.x === ox && item.y === oy) return false;
+    if (tx === ox && ty === oy) return false;
     return !e.state.processingItem;
 }
 
@@ -10,7 +10,7 @@ export function processHueRotator(engine, e) {
     if (!e.state.processingItem) {
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
-            if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3 && canHueRotatorAccept(e, item)) {
+            if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height && canHueRotatorAccept(e, item, item.x, item.y)) {
                 e.state.processingItem = {...item};
                 e.state.processTimer = 40;
                 engine.items.splice(i, 1);

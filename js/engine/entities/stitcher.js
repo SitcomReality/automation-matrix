@@ -1,9 +1,9 @@
 import { blendHue, getMachineOutputCell } from './utils.js';
 import { audioManager } from '../../audio.js';
 
-export function canStitcherAccept(e, item) {
+export function canStitcherAccept(e, item, tx, ty) {
     const { ox, oy } = getMachineOutputCell(e);
-    if (item.x === ox && item.y === oy) return false;
+    if (tx === ox && ty === oy) return false;
     return e.state.buffer.length < 2 && e.state.processTimer === 0;
 }
 
@@ -13,7 +13,7 @@ export function processStitcher(engine, e) {
     for (let i = engine.items.length - 1; i >= 0; i--) {
         const item = engine.items[i];
         if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
-            if (canStitcherAccept(e, item)) {
+            if (canStitcherAccept(e, item, item.x, item.y)) {
                 e.state.buffer.push({...item});
                 engine.items.splice(i, 1);
             }

@@ -6,16 +6,16 @@ import { processSandProcessor, canSandProcessorAccept } from './entities/sand-pr
 import { processHueRotator, canHueRotatorAccept } from './entities/hue-rotator.js';
 import { processCrystallizer, canCrystallizerAccept } from './entities/crystallizer.js';
 
-export function canAcceptItem(e, item) {
+export function canAcceptItem(e, item, tx, ty) {
     if (!e || !e.state) return false;
     
     switch (e.type) {
-        case 'sand-processor': return canSandProcessorAccept(e, item);
-        case 'blender':        return canBlenderAccept(e, item);
-        case 'slot-machine':   return canSlotMachineAccept(e, item);
-        case 'stitcher':       return canStitcherAccept(e, item);
-        case 'hue-rotator':    return canHueRotatorAccept(e, item);
-        case 'crystallizer':   return canCrystallizerAccept(e, item);
+        case 'sand-processor': return canSandProcessorAccept(e, item, tx, ty);
+        case 'blender':        return canBlenderAccept(e, item, tx, ty);
+        case 'slot-machine':   return canSlotMachineAccept(e, item, tx, ty);
+        case 'stitcher':       return canStitcherAccept(e, item, tx, ty);
+        case 'hue-rotator':    return canHueRotatorAccept(e, item, tx, ty);
+        case 'crystallizer':   return canCrystallizerAccept(e, item, tx, ty);
         default: return false;
     }
 }

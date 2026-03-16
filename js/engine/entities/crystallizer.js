@@ -2,9 +2,9 @@ import { audioManager } from '../../audio.js';
 
 import { getMachineOutputCell } from './utils.js';
 
-export function canCrystallizerAccept(e, item) {
+export function canCrystallizerAccept(e, item, tx, ty) {
     const { ox, oy } = getMachineOutputCell(e);
-    if (item.x === ox && item.y === oy) return false;
+    if (tx === ox && ty === oy) return false;
     return !e.state.processingItem;
 }
 
@@ -12,8 +12,8 @@ export function processCrystallizer(engine, e) {
     if (!e.state.processingItem) {
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
-            if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3) {
-                if (canCrystallizerAccept(e, item)) {
+            if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
+                if (canCrystallizerAccept(e, item, item.x, item.y)) {
                     e.state.processingItem = {...item};
                     e.state.processTimer = 180;
                     engine.items.splice(i, 1);

@@ -3,12 +3,12 @@ import { audioManager } from '../../audio.js';
 
 import { getMachineOutputCell } from './utils.js';
 
-export function canBlenderAccept(e, item) {
+export function canBlenderAccept(e, item, tx, ty) {
     if (e.state.blending) return false;
     
     // Check if item is entering through the output port
     const { ox, oy } = getMachineOutputCell(e);
-    if (item.x === ox && item.y === oy) return false;
+    if (tx === ox && ty === oy) return false;
 
     const typeIdx = e.state.itemTypes.findIndex(t => 
         t.h === item.h && t.s === item.s && t.l === item.l && t.sides === item.sides
@@ -58,8 +58,8 @@ export function processBlender(engine, e) {
     if (!e.state.blending) {
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
-            if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
-                if (canBlenderAccept(e, item)) {
+            if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
+                if (canBlenderAccept(e, item, item.x, item.y)) {
                     let typeIdx = e.state.itemTypes.findIndex(t => 
                         t.h === item.h && t.s === item.s && t.l === item.l && t.sides === item.sides
                     );

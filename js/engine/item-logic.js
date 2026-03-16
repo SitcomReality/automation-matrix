@@ -59,10 +59,10 @@ export function updateItemMovement(engine) {
                         maxProgress = 1.5; 
                     }
                 } else if (['sand-processor', 'slot-machine', 'blender', 'stitcher', 'hue-rotator', 'crystallizer'].includes(destE.type)) {
-                    let isInputPoint = (nx >= destE.x && nx < destE.x + destE.width && ny >= destE.y && ny < destE.y + destE.height);
+                    let isWithinBounds = (nx >= destE.x && nx < destE.x + destE.width && ny >= destE.y && ny < destE.y + destE.height);
                     
-                    if (isInputPoint) {
-                        maxProgress = canAcceptItem(destE, item) ? 1.5 : 0.5;
+                    if (isWithinBounds) {
+                        maxProgress = canAcceptItem(destE, item, nx, ny) ? 1.5 : 0.5;
                     } else {
                         maxProgress = 0.5;
                     }
@@ -91,7 +91,7 @@ export function updateItemMovement(engine) {
                     item.inDir = oldOutDir;
                     assignOutput(destE, item);
                 } else if (['sand-processor', 'slot-machine', 'blender', 'stitcher', 'hue-rotator', 'crystallizer'].includes(destE.type)) {
-                    if (canAcceptItem(destE, item)) {
+                    if (canAcceptItem(destE, item, nx, ny)) {
                         item.x = nx;
                         item.y = ny;
                         item.progress = 0;

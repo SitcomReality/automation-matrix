@@ -3,9 +3,9 @@ import { audioManager } from '../../audio.js';
 
 import { getMachineOutputCell } from './utils.js';
 
-export function canSlotMachineAccept(e, item) {
+export function canSlotMachineAccept(e, item, tx, ty) {
     const { ox, oy } = getMachineOutputCell(e);
-    if (item.x === ox && item.y === oy) return false;
+    if (tx === ox && ty === oy) return false;
     return !e.state.spinning;
 }
 
@@ -13,8 +13,8 @@ export function processSlotMachine(engine, e) {
     if (!e.state) return;
     for (let i = engine.items.length - 1; i >= 0; i--) {
         const item = engine.items[i];
-        if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3) {
-            if (canSlotMachineAccept(e, item)) {
+        if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
+            if (canSlotMachineAccept(e, item, item.x, item.y)) {
                 let mult = (item.sides - 2) * (item.s / 50) * (item.l / 40);
                 e.state.spinning = true; e.state.spinTime = 60; e.state.multiplier = mult;
                 engine.items.splice(i, 1);
