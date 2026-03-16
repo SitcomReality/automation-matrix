@@ -86,7 +86,7 @@ export function processBlender(engine, e) {
         const h = blendHue(itemA.h, itemB.h);
         const s = Math.min(100, (itemA.s + itemB.s) / 2 + 10);
         const l = Math.min(80, (itemA.l + itemB.l) / 2 + 5);
-        const sides = Math.max(itemA.sides, itemB.sides) + 1;
+        const sides = Math.min(itemA.sides, itemB.sides);
         
         e.state.blendedResult = { h, s, l, sides };
         e.state.blendColor = `hsl(${h}, ${s}%, ${l}%)`;
