@@ -34,16 +34,17 @@ export function updateItemMovement(engine) {
         if (item.inDir === undefined) item.inDir = item.outDir;
 
         const { nx, ny } = getBeltOutput(e, item);
-        let maxProgress = 1.0;
+        // Default to center of current cell if blocked
+        let maxProgress = 0.5;
 
-        // Check for items ahead in the same cell
+        // Check for items ahead in the same cell (unlikely with 1-item-per-cell, but for robustness)
         const itemsAheadInSame = engine.items.filter(
             it => it.x === item.x && it.y === item.y && it !== item && it.progress > item.progress
         );
         
         if (itemsAheadInSame.length > 0) {
             const nextItem = itemsAheadInSame.reduce((min, it) => (it.progress < min.progress ? it : min));
-            maxProgress = nextItem.progress - 1.0; // Maintain 1.0 spacing
+            maxProgress = nextItem.progress - 1.0; 
         } else {
             // Check for items in the destination cell
             const destE = engine.getEntityAt(nx, ny);
@@ -51,27 +52,30 @@ export function updateItemMovement(engine) {
                 if (['belt', 'splitter', 'combiner'].includes(destE.type)) {
                     const itemsInNext = engine.items.filter(it => it.x === nx && it.y === ny);
                     if (itemsInNext.length > 0) {
-                        const tailItem = itemsInNext.reduce((min, it) => (it.progress < min.progress ? it : min));
-                        maxProgress = tailItem.progress; // If tail is at 0.2, we can only go to 0.2 in current
+                        const tailItem = engine.items.filter(it => it.x === nx && it.y === ny)
+                            .reduce((min, it) => (it.progress < min.progress ? it : min));
+                        // If tail of next is at 0.5, we can reach 0.5 in current (1.0 distance)
+                        maxProgress = tailItem.progress; 
                     } else {
-                        maxProgress = 2.0; // Room to move into next cell
+                        // Room to move into next cell center
+                        maxProgress = 1.5; 
                     }
                 } else if (['sand-processor', 'slot-machine', 'blender'].includes(destE.type)) {
-                    // Check specific input points for machines
                     let isInputPoint = false;
                     if (destE.type === 'sand-processor') isInputPoint = (nx === destE.x + 1 && ny === destE.y);
                     else isInputPoint = (nx >= destE.x && nx < destE.x + destE.width && ny >= destE.y && ny < destE.y + destE.height);
                     
                     if (isInputPoint) {
-                        maxProgress = canAcceptItem(destE, item.type) ? 2.0 : 1.0;
+                        // Allow moving toward center of machine cell if it can accept
+                        maxProgress = canAcceptItem(destE, item.type) ? 1.5 : 0.5;
                     } else {
-                        maxProgress = 1.0;
+                        maxProgress = 0.5;
                     }
                 } else {
-                    maxProgress = 1.0; // Blocked by non-transport building
+                    maxProgress = 0.5; // Blocked by non-transport building
                 }
             } else {
-                maxProgress = 1.0; // Blocked by empty space
+                maxProgress = 0.5; // Blocked by empty space
             }
         }
 
