@@ -22,7 +22,15 @@ export function canAcceptItem(e, item) {
     }
     
     if (e.type === 'blender') {
-        return !e.state.blending && e.state.items.length < 2;
+        if (e.state.blending) return false;
+        const typeIdx = e.state.itemTypes.findIndex(t => 
+            t.h === item.h && t.s === item.s && t.l === item.l && t.sides === item.sides
+        );
+        if (typeIdx !== -1) {
+            return e.state.itemCounts[typeIdx] < 2;
+        } else {
+            return e.state.itemTypes.length < 2;
+        }
     }
     
     if (e.type === 'stitcher') {
@@ -96,9 +104,19 @@ export function processEntity(engine, e) {
                 const item = engine.items[i];
                 if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
                     if (canAcceptItem(e, item)) {
-                        e.state.items.push({...item});
-                        const pType = e.state.items.length;
-                        for (let k = 0; k < 30; k++) {
+                        let typeIdx = e.state.itemTypes.findIndex(t => 
+                            t.h === item.h && t.s === item.s && t.l === item.l && t.sides === item.sides
+                        );
+                        
+                        if (typeIdx === -1) {
+                            e.state.itemTypes.push({h: item.h, s: item.s, l: item.l, sides: item.sides});
+                            typeIdx = e.state.itemTypes.length - 1;
+                        }
+                        e.state.itemCounts[typeIdx]++;
+                        
+                        // Particle color based on input type
+                        const pType = typeIdx + 1;
+                        for (let k = 0; k < 40; k++) {
                             let sx = 5 + Math.floor(Math.random() * 10);
                             if (e.state.grid[0][sx] === 0) e.state.grid[0][sx] = pType;
                         }
@@ -108,16 +126,16 @@ export function processEntity(engine, e) {
             }
         }
 
-        if (e.state.items.length === 2 && !e.state.blending) {
+        if (e.state.itemCounts[0] === 2 && e.state.itemCounts[1] === 2 && !e.state.blending) {
             e.state.blending = true;
-            e.state.blendTimer = 60;
-            const [itemA, itemB] = e.state.items;
+            e.state.blendTimer = 90;
+            const itemA = e.state.itemTypes[0];
+            const itemB = e.state.itemTypes[1];
             
-            // Calculate blended HSL
             const h = blendHue(itemA.h, itemB.h);
-            const s = Math.min(100, (itemA.s + itemB.s) / 2 + 10); // Boost saturation
-            const l = Math.min(80, (itemA.l + itemB.l) / 2 + 5);  // Boost lightness
-            const sides = Math.max(itemA.sides, itemB.sides) + 1; // Increase complexity
+            const s = Math.min(100, (itemA.s + itemB.s) / 2 + 10);
+            const l = Math.min(80, (itemA.l + itemB.l) / 2 + 5);
+            const sides = Math.max(itemA.sides, itemB.sides) + 1;
             
             e.state.blendedResult = { h, s, l, sides };
             e.state.blendColor = `hsl(${h}, ${s}%, ${l}%)`;
@@ -149,7 +167,8 @@ export function processEntity(engine, e) {
                     const blocked = engine.items.find(it => it.x === nx && it.y === ny && it.progress < 0.5);
                     if (!blocked) {
                         const res = e.state.blendedResult;
-                        e.state.items = [];
+                        e.state.itemTypes = [];
+                        e.state.itemCounts = [0, 0];
                         e.state.blending = false;
                         e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
                         engine.items.push({ 

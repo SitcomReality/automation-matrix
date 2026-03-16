@@ -110,21 +110,30 @@ export function drawEntity(ctx, engine, state, e) {
         const h = e.height * TILE_SIZE;
         ctx.fillStyle = '#5D6D7E';
         ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = e.state.blending ? (e.state.blendColor || '#B026FF') : '#0B0C10';
+        
+        // Background color logic: derived from blend if 2 types present, else dark
+        if (e.state.itemTypes.length === 2) {
+            ctx.fillStyle = e.state.blendColor || '#0B0C10';
+        } else {
+            ctx.fillStyle = '#0B0C10';
+        }
         ctx.beginPath(); ctx.arc(w / 2, h / 2, w / 2 - 10, 0, Math.PI * 2); ctx.fill();
+        
         const gridW = w - 24; const gridH = h - 24; const cellW = gridW / 20; const cellH = gridH / 20;
         const startX = 12; const startY = 12;
         for (let sy = 0; sy < 20; sy++) {
             for (let sx = 0; sx < 20; sx++) {
                 const val = e.state.grid[sy][sx];
                 if (val > 0) {
-                    const itemType = e.state.items[val - 1];
-                    ctx.fillStyle = itemType === 'juice' ? '#E94560' : itemType === 'ore' ? '#66FCF1' : '#E67E22';
-                    ctx.fillRect(startX + sx * cellW, startY + sy * cellH, cellW + 0.5, cellH + 0.5);
+                    const it = e.state.itemTypes[val - 1];
+                    if (it) {
+                        ctx.fillStyle = `hsl(${it.h}, ${it.s}%, ${it.l}%)`;
+                        ctx.fillRect(startX + sx * cellW, startY + sy * cellH, cellW + 0.5, cellH + 0.5);
+                    }
                 }
             }
         }
-        if (e.state.items.length > 0) {
+        if (e.state.itemTypes.length > 0) {
             ctx.save();
             ctx.translate(w / 2, h / 2);
             const rotSpeed = e.state.blending ? 0.4 : 0.05;

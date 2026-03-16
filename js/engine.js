@@ -80,7 +80,7 @@ export class GameEngine {
         } else if (type === 'blender') {
             w = 2; h = 2;
             const grid = Array(20).fill(null).map(() => Array(20).fill(0));
-            config = { items: [], grid, blendTimer: 0, blending: false };
+            config = { itemTypes: [], itemCounts: [0, 0], grid, blendTimer: 0, blending: false };
         } else if (type === 'hue-rotator') {
             config = { processingItem: null, processTimer: 0 };
         } else if (type === 'crystallizer') {
