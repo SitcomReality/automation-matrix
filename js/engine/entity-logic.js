@@ -35,9 +35,9 @@ export function canAcceptItem(e, item) {
 }
 
 export function processEntity(engine, e) {
-    // Miner Logic
+    // Miner Logic (guarded access to engine.tiles to avoid runtime errors if map is missing)
     if (e.type === 'miner' && engine.tick % 240 === 0) {
-        const resKey = engine.tiles[e.y][e.x];
+        const resKey = (engine.tiles && engine.tiles[e.y] && engine.tiles[e.y][e.x]) ? engine.tiles[e.y][e.x] : null;
         if (resKey && BASE_RESOURCES[resKey]) {
             const res = BASE_RESOURCES[resKey];
             const nx = e.x + 1;
