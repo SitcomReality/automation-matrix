@@ -1,4 +1,4 @@
-import { TILE_SIZE } from '../constants.js';
+import { TILE_SIZE, BASE_RESOURCES } from '../constants.js';
 import { audioManager } from '../audio.js';
 
 export function canAcceptItem(e, itemType) {
@@ -26,18 +26,22 @@ export function canAcceptItem(e, itemType) {
 export function processEntity(engine, e) {
     // Miner Logic
     if (e.type === 'miner' && engine.tick % 240 === 0) {
-        const res = engine.tiles[e.y][e.x];
-        if (res) {
+        const resKey = engine.tiles[e.y][e.x];
+        if (resKey && BASE_RESOURCES[resKey]) {
+            const res = BASE_RESOURCES[resKey];
             const nx = e.x + 1;
             const ny = e.y;
             const destE = engine.getEntityAt(nx, ny);
             if (destE && ['belt', 'splitter', 'combiner'].includes(destE.type)) {
-                // Check if the destination entry slot is clear (at least 1.0 distance from others)
                 const blocked = engine.items.find(i => i.x === nx && i.y === ny && i.progress < 1.0);
                 if (!blocked) {
                     engine.items.push({ 
                         id: Math.random().toString(), 
-                        type: res, 
+                        type: 'fragment', 
+                        h: res.h,
+                        s: res.s,
+                        l: res.l,
+                        sides: res.sides,
                         x: nx, 
                         y: ny, 
                         progress: 0, 

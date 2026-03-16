@@ -25,7 +25,10 @@ export function generateMap(terrain) {
             const val = terrain[y][x];
             if (val > 0.75) {
                 if (Math.random() > 0.85) {
-                    tiles[y][x] = val > 0.82 ? 'juice' : 'ore';
+                    const r = Math.random();
+                    if (r > 0.66) tiles[y][x] = 'bloodrock';
+                    else if (r > 0.33) tiles[y][x] = 'tearshard';
+                    else tiles[y][x] = 'snotstone';
                 }
             }
         }

@@ -13,42 +13,42 @@ export function drawTerrain(ctx, engine) {
     }
 }
 
+import { BASE_RESOURCES } from '../constants.js';
+
 export function drawResources(ctx, engine) {
     for (let y = 0; y < MAP_SIZE; y++) {
         for (let x = 0; x < MAP_SIZE; x++) {
-            const res = engine.tiles[y][x];
-            if (!res) continue;
+            const resKey = engine.tiles[y][x];
+            if (!resKey || !BASE_RESOURCES[resKey]) continue;
 
+            const res = BASE_RESOURCES[resKey];
             const cx = x * TILE_SIZE + TILE_SIZE / 2;
             const cy = y * TILE_SIZE + TILE_SIZE / 2;
 
             ctx.save();
             ctx.translate(cx, cy);
-            if (res === 'ore') {
-                ctx.fillStyle = '#45A29E';
+            
+            // Draw a cluster of small triangles/crystals
+            ctx.fillStyle = `hsl(${res.h}, ${res.s}%, ${res.l}%)`;
+            for(let i=0; i<3; i++) {
+                ctx.save();
+                ctx.rotate(i * 2 + engine.tick * 0.01);
+                ctx.translate(4, 0);
                 ctx.beginPath();
-                ctx.moveTo(0, -10);
-                ctx.lineTo(10, 0);
-                ctx.lineTo(0, 10);
-                ctx.lineTo(-10, 0);
+                ctx.moveTo(0, -8);
+                ctx.lineTo(6, 6);
+                ctx.lineTo(-6, 6);
+                ctx.closePath();
                 ctx.fill();
-                ctx.fillStyle = '#66FCF1';
-                ctx.beginPath();
-                ctx.moveTo(0, -6);
-                ctx.lineTo(6, 0);
-                ctx.lineTo(0, 6);
-                ctx.lineTo(-6, 0);
-                ctx.fill();
-            } else if (res === 'juice') {
-                ctx.fillStyle = '#900C3F';
-                ctx.beginPath();
-                ctx.arc(0, 0, 12, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#E94560';
-                ctx.beginPath();
-                ctx.arc(-3, -3, 6, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.restore();
             }
+            
+            // Bright spot
+            ctx.fillStyle = `hsl(${res.h}, ${res.s + 20}%, ${res.l + 20}%)`;
+            ctx.beginPath();
+            ctx.arc(0, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.restore();
         }
     }
