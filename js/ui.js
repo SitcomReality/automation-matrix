@@ -50,5 +50,42 @@ export class UI {
 
     updateHUD() {
         document.getElementById('currency-value').innerText = Math.floor(this.state.currency);
+        this.updateSelectionPanel();
+    }
+
+    updateSelectionPanel() {
+        const container = document.getElementById('selection-details');
+        if (!container) return;
+
+        const id = this.state.selectedEntityId;
+        if (!id) {
+            container.innerHTML = '<div class="empty-selection">No item selected</div>';
+            return;
+        }
+
+        const entity = this.engine.entities.find(e => e.id === id);
+        if (!entity) {
+            container.innerHTML = '<div class="empty-selection">No item selected</div>';
+            return;
+        }
+
+        const tool = TOOLS.find(t => t.id === entity.type);
+        const label = tool ? tool.label : entity.type;
+
+        container.innerHTML = `
+            <div class="selection-title">${label}</div>
+            <div class="selection-row">
+                <span>Position</span>
+                <span>${entity.x}, ${entity.y}</span>
+            </div>
+            <div class="selection-row">
+                <span>Dimensions</span>
+                <span>${entity.width}x${entity.height}</span>
+            </div>
+            <div class="selection-row">
+                <span>Instance ID</span>
+                <span style="font-family: monospace; font-size: 9px;">${entity.id}</span>
+            </div>
+        `;
     }
 }

@@ -176,8 +176,56 @@ body {
 }
 
 
+.panel {
+    border: 2px solid var(--bg-dark);
+    margin-bottom: 16px;
+    background: rgba(31, 40, 51, 0.3);
+}
+
+.panel-header {
+    background: var(--bg-dark);
+    color: var(--accent);
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+#selection-details {
+    padding: 12px;
+}
+
+.selection-title {
+    color: #FFF;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--bg-dark);
+    padding-bottom: 4px;
+}
+
+.selection-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.selection-row span:first-child {
+    opacity: 0.6;
+}
+
+.empty-selection {
+    font-style: italic;
+    font-size: 11px;
+    color: var(--text);
+    opacity: 0.5;
+    text-align: center;
+    padding: 8px 0;
+}
+
 .tutorial-box {
-    margin-top: 16px;
     padding: 12px;
     border: 2px solid var(--bg-dark);
     font-size: 12px;
