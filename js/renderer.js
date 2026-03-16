@@ -2,6 +2,7 @@ import { TILE_SIZE, MAP_SIZE } from './constants.js';
 import { drawTerrain, drawResources } from './renderer/terrain-renderer.js';
 import { drawEntity } from './renderer/entity-renderer.js';
 import { drawItem } from './renderer/item-renderer.js';
+import { particleManager } from './renderer/particles.js';
 
 export class Renderer {
     constructor(canvas, engine, state) {
@@ -10,16 +11,32 @@ export class Renderer {
         this.engine = engine;
         this.state = state;
         this.cam = { x: 0, y: 0, zoom: 1 };
+        this.shake = 0;
     }
 
     render() {
         const { ctx, canvas, engine, state, cam } = this;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Handle Shakes from Engine
+        if (engine.shakeRequest > 0) {
+            this.shake = Math.max(this.shake, engine.shakeRequest);
+            engine.shakeRequest = 0;
+        }
+
         ctx.save();
 
         // View Transform
         ctx.translate(canvas.width / 2 + cam.x, canvas.height / 2 + cam.y);
+        
+        // Screen Shake Apply
+        if (this.shake > 0.1) {
+            ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake);
+            this.shake *= 0.9;
+        } else {
+            this.shake = 0;
+        }
+
         ctx.scale(cam.zoom, cam.zoom);
         ctx.translate(-MAP_SIZE * TILE_SIZE / 2, -MAP_SIZE * TILE_SIZE / 2);
 
@@ -37,7 +54,11 @@ export class Renderer {
             drawItem(ctx, engine, item);
         }
 
-        // Layer 4: Overlays
+        // Layer 4: Particles
+        particleManager.update();
+        particleManager.draw(ctx);
+
+        // Layer 5: Overlays
         this.drawNotifications(ctx, engine);
 
         ctx.restore();

@@ -11,6 +11,7 @@ export class GameEngine {
         this.items = [];
         this.tick = 0;
         this.notifications = [];
+        this.shakeRequest = 0;
         
         this.load();
         this.initAutoSave();
@@ -109,6 +110,10 @@ export class GameEngine {
 
     getEntityAt(x, y) {
         return this.entities.find(e => x >= e.x && x < e.x + e.width && y >= e.y && y < e.y + e.height);
+    }
+
+    triggerShake(amount) {
+        this.shakeRequest = Math.max(this.shakeRequest, amount);
     }
 
     update() {

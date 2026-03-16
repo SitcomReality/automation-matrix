@@ -35,8 +35,8 @@ This document tracks the aesthetic evolution of the factory into the "Blue Ball 
 
 ## 4. Next Steps & Whimsical Ideas
 
-- **Global Particle Pool**: A unified system for sparks, steam, and grit to improve performance and visual density.
-- **Screen Shake**: Subtle feedback when heavy machines (Stitcher, Slot Machine) complete high-tier cycles.
+- **Global Particle Pool**: (Implemented) A unified system for sparks, steam, and grit to improve performance and visual density.
+- **Screen Shake**: (Implemented) Subtle feedback when heavy machines (Stitcher, Slot Machine) complete high-tier cycles.
 - **Archimedes Screw**: A 1×3 elevator device to move items vertically or across gaps.
 - **Pendulum Sorter**: A rhythmic arm that swings items between belts.
-- **Steam Vents**: Decorative overlays that pulse when nearby machines are active.
+- **Steam Vents**: (Implemented) Decorative overlays that pulse when nearby machines are active.

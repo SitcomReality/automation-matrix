@@ -65,6 +65,7 @@ export function processStitcher(engine, e) {
                     e.state.buffer = [];
                     e.state.phase = 'idle';
                     audioManager.play('place', 0.2);
+                    engine.triggerShake(5);
                 } else {
                     e.state.processTimer = 1; // Blocked: wait
                 }

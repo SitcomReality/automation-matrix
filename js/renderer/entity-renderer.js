@@ -1,4 +1,5 @@
 import { TILE_SIZE } from '../constants.js';
+import { particleManager } from './particles.js';
 
 const drawGear = (ctx, x, y, radius, rotation, teeth = 8) => {
     ctx.save();
@@ -112,6 +113,24 @@ const drawMachineIndicator = (ctx, w, h, dir) => {
     ctx.moveTo(-arrowSize - 2, yPos);
     ctx.lineTo(arrowSize + 2, yPos);
     ctx.stroke();
+    
+    ctx.restore();
+};
+
+const drawSteamVent = (ctx, x, y, active, tick) => {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    // Vent base
+    ctx.fillStyle = '#1F2833';
+    ctx.fillRect(-4, -2, 8, 4);
+    ctx.strokeStyle = '#45A29E';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-4, -2, 8, 4);
+
+    if (active && tick % 20 === 0) {
+        particleManager.spawn(x, y - 5, 'smoke', 'rgba(200, 200, 200, 0.5)', 1);
+    }
     
     ctx.restore();
 };
@@ -230,7 +249,13 @@ export function drawEntity(ctx, engine, state, e) {
                 ctx.arc(w/2 + Math.cos(angle) * r, h/2 + Math.sin(angle) * r, 2, 0, Math.PI * 2);
                 ctx.fill();
             }
+            if (engine.tick % 5 === 0) {
+                particleManager.spawn(e.x * TILE_SIZE + w/2, e.y * TILE_SIZE + h/2, 'spark', '#66FCF1', 1);
+            }
         }
+
+        drawSteamVent(ctx, 15, 15, e.state.phase === 'processing', engine.tick);
+        drawSteamVent(ctx, w - 15, 15, e.state.phase === 'processing', engine.tick + 10);
 
         drawMachineIndicator(ctx, w, h, e.dir);
     } else if (e.type === 'blender') {
@@ -302,15 +327,13 @@ export function drawEntity(ctx, engine, state, e) {
 
         // Sparks during peak compression
         if (e.state.phase === 'pressing' && anim > 0.4 && anim < 0.6) {
-            ctx.fillStyle = '#FFF';
-            for(let i=0; i<5; i++) {
-                const rx = (Math.random() - 0.5) * 20;
-                const ry = (Math.random() - 0.5) * 20;
-                ctx.beginPath();
-                ctx.arc(w/2 + rx, h/2 + ry, 2, 0, Math.PI * 2);
-                ctx.fill();
+            if (engine.tick % 2 === 0) {
+                particleManager.spawn(e.x * TILE_SIZE + w/2, e.y * TILE_SIZE + h/2, 'spark', '#FFF', 3);
             }
         }
+
+        drawSteamVent(ctx, 20, 20, e.state.phase === 'pressing', engine.tick);
+        drawSteamVent(ctx, w - 20, 20, e.state.phase === 'pressing', engine.tick + 5);
 
         drawMachineIndicator(ctx, w, h, e.dir);
     } else if (e.type === 'hue-rotator') {
