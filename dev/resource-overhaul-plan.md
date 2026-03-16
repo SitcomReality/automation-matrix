@@ -65,9 +65,12 @@ To avoid 'muddy' browns and grays when blending disparate hues:
 <xml>
 function blendHue(h1, h2) {
     let diff = Math.abs(h1 - h2);
-    if (diff <= 180) {
+    // If hues are close (≤ 120° apart), just average them directly.
+    if (diff <= 120) {
         return (h1 + h2) / 2;
     } else {
+        // If they are further than 120°, wrap around the color wheel along the shorter arc.
+        // Example: 0° (red) and 240° (blue) should give 270° (purple), not 120° (green).
         return ((h1 + h2 + 360) / 2) % 360;
     }
 }
