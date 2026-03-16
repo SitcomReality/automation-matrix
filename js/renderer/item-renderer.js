@@ -5,7 +5,6 @@ export function drawItem(ctx, engine, item) {
     const cy = item.y * TILE_SIZE + TILE_SIZE / 2;
     let dx = cx;
     let dy = cy;
-    let scaleX = 1, scaleY = 1;
 
     const e = engine.getEntityAt(item.x, item.y);
     if (e && (e.type === 'belt' || e.type === 'splitter' || e.type === 'combiner')) {
@@ -33,21 +32,10 @@ export function drawItem(ctx, engine, item) {
             dx = cx + (exitVec.x * (t * 0.5)) * TILE_SIZE;
             dy = cy + (exitVec.y * (t * 0.5)) * TILE_SIZE;
         }
-
-        const bounce = Math.sin(item.progress * Math.PI);
-        const currentDir = item.progress < 0.5 ? inDir : outDir;
-        if (currentDir === 0 || currentDir === 2) {
-            scaleX = 1 - bounce * 0.2;
-            scaleY = 1 + bounce * 0.4;
-        } else {
-            scaleX = 1 + bounce * 0.4;
-            scaleY = 1 - bounce * 0.2;
-        }
     }
 
     ctx.save();
     ctx.translate(dx, dy);
-    ctx.scale(scaleX, scaleY);
 
     if (item.type === 'ore') {
         ctx.fillStyle = '#45A29E';
