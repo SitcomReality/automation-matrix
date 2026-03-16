@@ -1,7 +1,20 @@
 import { TILE_SIZE, BASE_RESOURCES } from '../constants.js';
 import { audioManager } from '../audio.js';
 
-export function canAcceptItem(e, itemType) {
+/**
+ * Shortest-path Hue Blending
+ * Ensures we blend across the most vibrant arc of the color wheel.
+ */
+function blendHue(h1, h2) {
+    let a = h1 % 360;
+    let b = h2 % 360;
+    let diff = b - a;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    return (a + diff / 2 + 360) % 360;
+}
+
+export function canAcceptItem(e, item) {
     if (!e || !e.state) return false;
     
     if (e.type === 'sand-processor') {
@@ -10,10 +23,8 @@ export function canAcceptItem(e, itemType) {
     }
     
     if (e.type === 'blender') {
-        return !e.state.blending && 
-               e.state.items.length < 2 && 
-               !e.state.items.includes(itemType) && 
-               itemType !== 'blend';
+        // Blender accepts any item with HSL properties as long as it's not full
+        return !e.state.blending && e.state.items.length < 2;
     }
     
     if (e.type === 'slot-machine') {
@@ -82,10 +93,10 @@ export function processEntity(engine, e) {
             for (let i = engine.items.length - 1; i >= 0; i--) {
                 const item = engine.items[i];
                 if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
-                    if (canAcceptItem(e, item.type)) {
-                        e.state.items.push(item.type);
+                    if (canAcceptItem(e, item)) {
+                        e.state.items.push({...item});
                         const pType = e.state.items.length;
-                        for (let k = 0; k < 20; k++) {
+                        for (let k = 0; k < 30; k++) {
                             let sx = 5 + Math.floor(Math.random() * 10);
                             if (e.state.grid[0][sx] === 0) e.state.grid[0][sx] = pType;
                         }
@@ -97,21 +108,25 @@ export function processEntity(engine, e) {
 
         if (e.state.items.length === 2 && !e.state.blending) {
             e.state.blending = true;
-            e.state.blendTimer = 30;
-            // Clear particles immediately at start of animation
-            e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
-            // Determine a saturated blended color
-            if (e.state.items.includes('ore') && e.state.items.includes('juice')) {
-                e.state.blendColor = '#B026FF'; // Vibrant Neon Purple
-            } else {
-                e.state.blendColor = '#F5D04C'; // Fallback vibrant yellow
-            }
+            e.state.blendTimer = 60;
+            const [itemA, itemB] = e.state.items;
+            
+            // Calculate blended HSL
+            const h = blendHue(itemA.h, itemB.h);
+            const s = Math.min(100, (itemA.s + itemB.s) / 2 + 10); // Boost saturation
+            const l = Math.min(80, (itemA.l + itemB.l) / 2 + 5);  // Boost lightness
+            const sides = Math.max(itemA.sides, itemB.sides) + 1; // Increase complexity
+            
+            e.state.blendedResult = { h, s, l, sides };
+            e.state.blendColor = `hsl(${h}, ${s}%, ${l}%)`;
         }
 
         if (e.state.blending) {
             e.state.blendTimer--;
+            
+            // Swirl particles in the grid
             if (engine.tick % 2 === 0) {
-                for (let j = 0; j < 5; j++) {
+                for (let j = 0; j < 15; j++) {
                     let rx = Math.floor(Math.random() * 20);
                     let ry = Math.floor(Math.random() * 20);
                     if (e.state.grid[ry][rx] > 0) {
@@ -131,10 +146,17 @@ export function processEntity(engine, e) {
                 if (destE && ['belt','splitter','combiner'].includes(destE.type)) {
                     const blocked = engine.items.find(it => it.x === nx && it.y === ny && it.progress < 0.5);
                     if (!blocked) {
+                        const res = e.state.blendedResult;
                         e.state.items = [];
                         e.state.blending = false;
                         e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0));
-                        engine.items.push({ id: Math.random().toString(), type: 'blend', x: nx, y: ny, progress: 0, outDir: destE.dir });
+                        engine.items.push({ 
+                            id: Math.random().toString(), 
+                            type: 'mystic',
+                            h: res.h, s: res.s, l: res.l, sides: res.sides,
+                            x: nx, y: ny, progress: 0, outDir: destE.dir 
+                        });
+                        audioManager.play('money', 0.2);
                     }
                 }
             }
@@ -147,10 +169,9 @@ export function processEntity(engine, e) {
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
             if (item.x >= e.x && item.x < e.x + 2 && item.y >= e.y && item.y < e.y + 2) {
-                if (canAcceptItem(e, item.type)) {
-                    let mult = 0.1;
-                    if (['blend', 'refined-ore', 'refined-juice'].includes(item.type)) mult = 1.0;
-                    if (item.type === 'particle') mult = 0.5;
+                if (canAcceptItem(e, item)) {
+                    // Payout multiplier based on complexity (sides) and vibrance (saturation)
+                    let mult = (item.sides - 2) * (item.s / 50) * (item.l / 40);
                     e.state.spinning = true; e.state.spinTime = 60; e.state.multiplier = mult;
                     engine.items.splice(i, 1);
                 }
@@ -175,20 +196,21 @@ export function processEntity(engine, e) {
         }
     }
 
-    // Sand Processor simulation
+    // Sand Processor (now the "Polisher")
     if (e.type === 'sand-processor') {
         if (!e.state || !e.state.grid) return;
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
             if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3) {
-                if (canAcceptItem(e, item.type)) {
-                    e.state.currentProcessingType = item.type;
+                if (canAcceptItem(e, item)) {
+                    e.state.processingItem = {...item};
                     engine.items.splice(i, 1);
                     for(let sx=9; sx<=19; sx++) { e.state.grid[0][sx] = 1; e.state.grid[1][sx] = 1; }
                     break;
                 }
             }
         }
+        // Sand falling logic remains the same
         if (engine.tick % 2 === 0) {
             for (let y = 28; y >= 0; y--) {
                 for (let x = 0; x < 30; x++) {
@@ -210,16 +232,21 @@ export function processEntity(engine, e) {
         for (let x = 12; x <= 17; x++) { if (e.state.grid[29][x] === 1) { e.state.grid[29][x] = 0; collected++; } }
         if (collected > 0) {
             e.state.processTimer += collected;
-            if (e.state.processTimer >= 20) {
+            if (e.state.processTimer >= 30) {
                 let nx = e.x + 1, ny = e.y + 3;
                 const destE = engine.getEntityAt(nx, ny);
                 if (destE && ['belt', 'splitter', 'combiner'].includes(destE.type) && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
-                    let outType = e.state.currentProcessingType === 'ore' ? 'refined-ore' : e.state.currentProcessingType === 'juice' ? 'refined-juice' : 'particle';
-                    if (e.state.currentProcessingType === 'blend') outType = 'particle';
-                    engine.items.push({ id: Math.random().toString(), type: outType, x: nx, y: ny, progress: 0 });
+                    const original = e.state.processingItem;
+                    engine.items.push({ 
+                        ...original,
+                        id: Math.random().toString(),
+                        s: Math.min(100, original.s + 15),
+                        l: Math.min(90, original.l + 10),
+                        x: nx, y: ny, progress: 0, outDir: destE.dir 
+                    });
                     e.state.processTimer = 0;
                 } else {
-                    e.state.processTimer = 20; 
+                    e.state.processTimer = 30; 
                 }
             }
         }

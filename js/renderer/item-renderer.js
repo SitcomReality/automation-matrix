@@ -48,27 +48,50 @@ export function drawItem(ctx, engine, item) {
     ctx.save();
     ctx.translate(dx, dy);
 
-    // Dynamic HSL styling
     const h = item.h !== undefined ? item.h : 0;
     const s = item.s !== undefined ? item.s : 0;
     const l = item.l !== undefined ? item.l : 100;
     const sides = item.sides || 3;
+    const radius = Math.min(12, 6 + (sides - 3) * 1.5);
     
+    // Outer glow for saturated items
+    if (s > 70) {
+        const gradient = ctx.createRadialGradient(0, 0, radius * 0.5, 0, 0, radius * 2.5);
+        gradient.addColorStop(0, `hsla(${h}, ${s}%, ${l}%, 0.3)`);
+        gradient.addColorStop(1, `hsla(${h}, ${s}%, ${l}%, 0)`);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Core Shape
     ctx.fillStyle = `hsl(${h}, ${s}%, ${l}%)`;
-    ctx.strokeStyle = `hsl(${h}, ${s}%, ${Math.max(0, l - 20)}%)`;
+    ctx.strokeStyle = `hsl(${h}, ${s}%, ${Math.max(0, l - 30)}%)`;
     ctx.lineWidth = 1.5;
 
-    // Radius scales with tier (sides) slightly
-    const radius = 6 + (sides - 3) * 0.5;
+    ctx.save();
+    if (sides >= 6) {
+        ctx.rotate(engine.tick * 0.02); // Complex shapes spin slowly
+    }
     
     drawPolygon(ctx, sides, radius);
     ctx.stroke();
 
+    // Inner highlight
+    ctx.fillStyle = `hsla(${h}, ${Math.max(0, s - 20)}%, ${Math.min(100, l + 20)}%, 0.6)`;
+    drawPolygon(ctx, sides, radius * 0.4);
+    
+    ctx.restore();
+
     // Visual flair for high tiers
-    if (sides >= 8) {
-        ctx.strokeStyle = `hsla(${h}, 100%, 80%, 0.5)`;
+    if (sides >= 6) {
+        ctx.setLineDash([2, 2]);
+        ctx.strokeStyle = `hsla(${h}, ${s}%, ${l}%, 0.5)`;
         ctx.lineWidth = 1;
-        drawPolygon(ctx, sides, radius + 2);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius + 4, 0, Math.PI * 2);
+        ctx.stroke();
     }
 
     ctx.restore();
