@@ -116,6 +116,35 @@ const drawMachineIndicator = (ctx, w, h, dir) => {
     ctx.restore();
 };
 
+const drawArcLightning = (ctx, x1, y1, x2, y2, seed) => {
+    ctx.save();
+    ctx.strokeStyle = '#66FCF1';
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = '#66FCF1';
+    
+    const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    const segments = 5;
+    const jag = dist / 6;
+    
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    
+    // Pseudo-random based on seed and engine tick to prevent flickering every frame
+    const rand = (i) => Math.sin(seed * 543.21 + i * 123.45) * jag;
+
+    for (let i = 1; i < segments; i++) {
+        const t = i / segments;
+        const lx = x1 + (x2 - x1) * t + rand(i);
+        const ly = y1 + (y2 - y1) * t + rand(i + 0.5);
+        ctx.lineTo(lx, ly);
+    }
+    
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.restore();
+};
+
 export function drawEntity(ctx, engine, state, e) {
     if (!e) return;
     ctx.save();
@@ -287,27 +316,63 @@ export function drawEntity(ctx, engine, state, e) {
     } else if (e.type === 'hue-rotator') {
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
-        ctx.fillStyle = '#2C3E50';
+        ctx.fillStyle = '#0B0C10';
         ctx.fillRect(2, 2, w - 4, h - 4);
         
+        // Chassis rails
+        ctx.strokeStyle = '#1F2833';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(10, 10, w - 20, h - 20);
+
         ctx.save();
         ctx.translate(w / 2, h / 2);
         
-        // Glass prism effect (Static, doesn't rotate with dir)
+        const anim = e.state.anim || 0;
+        
+        // Rotating lenses
+        drawDrum(ctx, 0, 0, 25, engine.tick * 0.02, '#45A29E');
+        drawDrum(ctx, 0, 0, 15, -engine.tick * 0.05, '#66FCF1');
+
+        // Central prism
+        ctx.save();
+        ctx.rotate(Math.sin(engine.tick * 0.05) * 0.1);
         ctx.beginPath();
-        ctx.moveTo(0, -10); ctx.lineTo(10, 8); ctx.lineTo(-10, 8);
+        ctx.moveTo(0, -12); ctx.lineTo(12, 10); ctx.lineTo(-12, 10);
         ctx.closePath();
         ctx.fillStyle = 'rgba(102, 252, 241, 0.4)';
         ctx.fill();
         ctx.strokeStyle = '#66FCF1';
         ctx.stroke();
+        ctx.restore();
 
         if (e.state.processingItem) {
-            const hue = (engine.tick * 5) % 360;
-            ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.8)`;
+            // Prismatic beam
+            const beamHue = (e.state.processingItem.h + anim * 30) % 360;
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.lineWidth = 4 + Math.sin(engine.tick * 0.2) * 2;
+            ctx.strokeStyle = `hsla(${beamHue}, 100%, 70%, 0.6)`;
             ctx.beginPath();
-            ctx.moveTo(-12, 0); ctx.lineTo(12, 0);
+            ctx.moveTo(-w/2 + 10, 0);
+            ctx.lineTo(w/2 - 10, 0);
             ctx.stroke();
+            
+            // Core beam
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
+            
+            // Draw ghost of item in center
+            ctx.save();
+            ctx.globalAlpha = 0.7;
+            const item = e.state.processingItem;
+            // Temporary item-like render (simplified)
+            ctx.fillStyle = `hsl(${beamHue}, ${item.s}%, ${item.l}%)`;
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
         }
         ctx.restore();
         drawMachineIndicator(ctx, w, h, e.dir);
@@ -333,19 +398,33 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.restore();
         }
 
-        if (e.state.processTimer > 0) {
+        if (e.state.processingItem) {
+            const anim = e.state.anim || 0;
+            // Levitate item
+            const hover = Math.sin(engine.tick * 0.1) * 5;
+            ctx.save();
+            ctx.translate(0, hover);
             ctx.fillStyle = '#FFF';
             ctx.beginPath();
-            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.arc(0, 0, 6, 0, Math.PI * 2);
             ctx.fill();
+            
             // Glow
-            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
-            grad.addColorStop(0, 'rgba(255,255,255,0.5)');
-            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 20 + anim * 20);
+            grad.addColorStop(0, 'rgba(102, 252, 241, 0.8)');
+            grad.addColorStop(1, 'rgba(102, 252, 241, 0)');
             ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(0, 0, 40, 0, Math.PI * 2);
+            ctx.arc(0, 0, 20 + anim * 20, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
+
+            // Arc lightning from corners to center
+            if (engine.tick % 5 < 3) {
+                const corners = [[-35, -35], [35, -35], [35, 35], [-35, 35]];
+                const corner = corners[Math.floor((engine.tick / 5) % 4)];
+                drawArcLightning(ctx, corner[0], corner[1], 0, hover, engine.tick);
+            }
         }
         
         ctx.restore();
@@ -357,16 +436,65 @@ export function drawEntity(ctx, engine, state, e) {
         }
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
-        ctx.fillStyle = '#8E44AD'; ctx.fillRect(4, 4, w - 8, h - 8);
-        ctx.fillStyle = e.state.spinning && engine.tick % 10 < 5 ? '#F1C40F' : '#E74C3C'; ctx.fillRect(8, 8, w - 16, 12);
-        ctx.fillStyle = '#111'; ctx.fillRect(12, 24, w - 24, 24);
-        ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const anim = e.state.anim || 0;
+        
+        ctx.fillStyle = '#111';
+        ctx.fillRect(2, 2, w - 4, h - 4);
+
+        // Funnel spiral background
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        ctx.strokeStyle = 'rgba(142, 68, 173, 0.3)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.arc(0, 0, 10 + i * 8 + Math.sin(engine.tick * 0.05) * 2, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        // Sacrificing ghost item
+        if (e.state.phase === 'sacrificing' && e.state.sacrificingItem) {
+            const spiralRadius = 40 * (1 - anim);
+            const spiralAngle = anim * Math.PI * 6;
+            const sx = Math.cos(spiralAngle) * spiralRadius;
+            const sy = Math.sin(spiralAngle) * spiralRadius;
+            
+            ctx.fillStyle = `hsla(${e.state.sacrificingItem.h}, ${e.state.sacrificingItem.s}%, ${e.state.sacrificingItem.l}%, ${1-anim})`;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 6 * (1 - anim), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // Machine head / reels
+        ctx.fillStyle = '#8E44AD';
+        ctx.fillRect(10, 10, w - 20, 45);
+        ctx.strokeStyle = '#FFF';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(10, 10, w - 20, 45);
+
+        ctx.fillStyle = e.state.spinning && engine.tick % 10 < 5 ? '#F1C40F' : '#E74C3C';
+        ctx.fillRect(14, 14, w - 28, 8);
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(14, 24, w - 28, 24);
+        
+        ctx.font = 'bold 14px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         const symbols = ['★', '🍒', '7', '💎', '🔔'];
         ctx.fillStyle = '#FFF';
         const [r1, r2, r3] = e.state.reels || [0, 0, 0];
-        if (e.state.spinning) { ctx.fillText('?? ? ??', w / 2, 36); }
-        else { ctx.fillText(`${symbols[r1] || '★'} ${symbols[r2] || '★'} ${symbols[r3] || '★'}`, w / 2, 36); }
-        ctx.fillStyle = '#FFF'; ctx.font = '10px sans-serif'; ctx.fillText(`x${e.state.multiplier || 0.1}`, w / 2, h - 10);
+        if (e.state.spinning) {
+            ctx.fillText('?? ? ??', w / 2, 36);
+        } else {
+            ctx.fillText(`${symbols[r1] || '★'} ${symbols[r2] || '★'} ${symbols[r3] || '★'}`, w / 2, 36);
+        }
+        
+        ctx.fillStyle = '#FFF';
+        ctx.font = '9px sans-serif';
+        ctx.fillText(`MULT x${(e.state.multiplier || 0.1).toFixed(1)}`, w / 2, h - 12);
+        
     } else {
         ctx.fillStyle = '#1A252F';
         ctx.fillRect(2, 2, e.width * TILE_SIZE - 4, e.height * TILE_SIZE - 4);
