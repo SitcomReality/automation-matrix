@@ -1,4 +1,8 @@
+import { getMachineOutputCell } from './utils.js';
+
 export function canSandProcessorAccept(e, item) {
+    const { ox, oy } = getMachineOutputCell(e);
+    if (item.x === ox && item.y === oy) return false;
     return !e.state.processingItem;
 }
 
@@ -38,9 +42,9 @@ export function processSandProcessor(engine, e) {
     if (collected > 0) {
         e.state.processTimer += collected;
         if (e.state.processTimer >= 30) {
-            let nx = e.x + 1, ny = e.y + 3;
+            const { nx, ny } = getMachineOutputCell(e);
             const destE = engine.getEntityAt(nx, ny);
-            if (destE && ['belt', 'splitter', 'combiner'].includes(destE.type) && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
+            if (destE && ['belt', 'splitter'].includes(destE.type) && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
                 const original = e.state.processingItem;
                 engine.items.push({ 
                     ...original,

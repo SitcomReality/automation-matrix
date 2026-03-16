@@ -1,7 +1,9 @@
-import { blendHue } from './utils.js';
+import { blendHue, getMachineOutputCell } from './utils.js';
 import { audioManager } from '../../audio.js';
 
 export function canStitcherAccept(e, item) {
+    const { ox, oy } = getMachineOutputCell(e);
+    if (item.x === ox && item.y === oy) return false;
     return e.state.buffer.length < 2 && e.state.processTimer === 0;
 }
 
@@ -26,11 +28,7 @@ export function processStitcher(engine, e) {
         e.state.processTimer--;
         if (e.state.processTimer === 0) {
             const [a, b] = e.state.buffer;
-            let nx, ny;
-            if (e.dir === 0) { nx = e.x; ny = e.y - 1; }
-            else if (e.dir === 1) { nx = e.x + e.width; ny = e.y; }
-            else if (e.dir === 2) { nx = e.x; ny = e.y + e.height; }
-            else { nx = e.x - 1; ny = e.y; }
+            const { nx, ny } = getMachineOutputCell(e);
 
             const destE = engine.getEntityAt(nx, ny);
             if (destE && ['belt', 'splitter'].includes(destE.type)) {

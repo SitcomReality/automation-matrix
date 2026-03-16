@@ -5,10 +5,12 @@ export function processMiner(engine, e) {
         const resKey = (engine.tiles && engine.tiles[e.y] && engine.tiles[e.y][e.x]) ? engine.tiles[e.y][e.x] : null;
         if (resKey && BASE_RESOURCES[resKey]) {
             const res = BASE_RESOURCES[resKey];
-            const nx = e.x + 1;
-            const ny = e.y;
+            // Miner outputs in its current dir
+            const nx = e.x + (e.dir === 1 ? 1 : e.dir === 3 ? -1 : 0);
+            const ny = e.y + (e.dir === 2 ? 1 : e.dir === 0 ? -1 : 0);
+            
             const destE = engine.getEntityAt(nx, ny);
-            if (destE && ['belt', 'splitter', 'combiner'].includes(destE.type)) {
+            if (destE && ['belt', 'splitter'].includes(destE.type)) {
                 const blocked = engine.items.find(i => i.x === nx && i.y === ny && i.progress < 1.0);
                 if (!blocked) {
                     engine.items.push({ 
@@ -21,7 +23,7 @@ export function processMiner(engine, e) {
                         x: nx, 
                         y: ny, 
                         progress: 0, 
-                        inDir: 1, // Miner outputs East
+                        inDir: e.dir,
                         outDir: destE.dir 
                     });
                 }

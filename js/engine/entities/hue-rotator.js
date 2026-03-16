@@ -1,4 +1,8 @@
+import { getMachineOutputCell } from './utils.js';
+
 export function canHueRotatorAccept(e, item) {
+    const { ox, oy } = getMachineOutputCell(e);
+    if (item.x === ox && item.y === oy) return false;
     return !e.state.processingItem;
 }
 
@@ -6,7 +10,7 @@ export function processHueRotator(engine, e) {
     if (!e.state.processingItem) {
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
-            if (item.x === e.x && item.y === e.y && canHueRotatorAccept(e, item)) {
+            if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3 && canHueRotatorAccept(e, item)) {
                 e.state.processingItem = {...item};
                 e.state.processTimer = 40;
                 engine.items.splice(i, 1);
@@ -16,10 +20,7 @@ export function processHueRotator(engine, e) {
     } else {
         e.state.processTimer--;
         if (e.state.processTimer <= 0) {
-            const { nx, ny } = {
-                nx: e.x + (e.dir === 1 ? 1 : e.dir === 3 ? -1 : 0),
-                ny: e.y + (e.dir === 2 ? 1 : e.dir === 0 ? -1 : 0)
-            };
+            const { nx, ny } = getMachineOutputCell(e);
             const destE = engine.getEntityAt(nx, ny);
             if (destE && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
                 const original = e.state.processingItem;

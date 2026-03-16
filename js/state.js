@@ -2,7 +2,7 @@ export class GameState {
     constructor() {
         this.currency = 0;
         this.selectedTool = 'cursor';
-        this.direction = 1; // East
+        this.direction = 2; // South
         this.selectedEntityId = null;
         this.listeners = [];
 

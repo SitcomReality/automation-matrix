@@ -1,8 +1,15 @@
 import { blendHue } from './utils.js';
 import { audioManager } from '../../audio.js';
 
+import { getMachineOutputCell } from './utils.js';
+
 export function canBlenderAccept(e, item) {
     if (e.state.blending) return false;
+    
+    // Check if item is entering through the output port
+    const { ox, oy } = getMachineOutputCell(e);
+    if (item.x === ox && item.y === oy) return false;
+
     const typeIdx = e.state.itemTypes.findIndex(t => 
         t.h === item.h && t.s === item.s && t.l === item.l && t.sides === item.sides
     );
@@ -16,10 +23,10 @@ export function canBlenderAccept(e, item) {
 export function processBlender(engine, e) {
     if (!e.state || !e.state.grid) return;
 
-    const outX = e.x + 2, outY = e.y;
+    const { nx: outX, ny: outY } = getMachineOutputCell(e);
     const destE = engine.getEntityAt(outX, outY);
     const blocked = engine.items.some(it => it.x === outX && it.y === outY && it.progress < 0.5);
-    const canOutput = destE && ['belt', 'splitter', 'combiner'].includes(destE.type) && !blocked;
+    const canOutput = destE && ['belt', 'splitter'].includes(destE.type) && !blocked;
 
     if (e.state.blending) {
         e.state.animTick = (e.state.animTick || 0) + 1;

@@ -70,18 +70,19 @@ export class GameEngine {
             for (let i = 7; i <= 22; i++) grid[15][i] = 2;
             config = { grid, processTimer: 0 }; 
         } else if (type === 'slot-machine') { 
-            w = 2; h = 2; 
+            w = 3; h = 3; 
             config = { reels: [0,0,0], spinning: false, spinTime: 0 }; 
         } else if (type === 'splitter') {
             config = { cycle: 0 };
         } else if (type === 'stitcher') {
-            w = 2; h = 1;
+            w = 3; h = 3;
             config = { buffer: [], processTimer: 0 };
         } else if (type === 'blender') {
-            w = 2; h = 2;
+            w = 3; h = 3;
             const grid = Array(20).fill(null).map(() => Array(20).fill(0));
             config = { itemTypes: [], itemCounts: [0, 0], grid, blendTimer: 0, blending: false };
         } else if (type === 'hue-rotator') {
+            w = 3; h = 3;
             config = { processingItem: null, processTimer: 0 };
         } else if (type === 'crystallizer') {
             w = 3; h = 3;

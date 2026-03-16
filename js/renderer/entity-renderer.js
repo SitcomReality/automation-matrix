@@ -67,8 +67,12 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.fill();
         ctx.restore();
 
+        ctx.save();
+        ctx.translate(TILE_SIZE / 2, TILE_SIZE / 2);
+        ctx.rotate(e.dir * Math.PI / 2);
         ctx.fillStyle = '#7F8C8D';
-        ctx.fillRect(TILE_SIZE - 6, TILE_SIZE / 2 - 4, 6, 8);
+        ctx.fillRect(-3, 10, 6, 6);
+        ctx.restore();
     } else if (e.type === 'sand-processor') {
         if (!e.state || !e.state.grid) {
             ctx.restore();
@@ -143,8 +147,14 @@ export function drawEntity(ctx, engine, state, e) {
         }
         ctx.strokeStyle = '#BDC3C7'; ctx.lineWidth = 4;
         ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
+        
+        // Output pointer
+        ctx.rotate(e.dir * Math.PI / 2);
+        ctx.fillStyle = '#7F8C8D';
+        ctx.beginPath();
+        ctx.moveTo(-10, 40); ctx.lineTo(10, 40); ctx.lineTo(0, 50);
+        ctx.fill();
         ctx.restore();
-        ctx.fillStyle = '#7F8C8D'; ctx.fillRect(w - 6, h / 2 - 8, 6, 16);
     } else if (e.type === 'stitcher') {
         const w = e.width * TILE_SIZE;
         const h = e.height * TILE_SIZE;
@@ -161,13 +171,13 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.fillRect(8, h - 10, (w - 16) * pct, 4);
         }
 
-        // Symbols
+        // Direction Indicator (Output Port)
         ctx.save();
         ctx.translate(w / 2, h / 2);
         ctx.rotate(e.dir * Math.PI / 2);
         ctx.fillStyle = '#D7BDE2';
         ctx.beginPath();
-        ctx.moveTo(-10, -5); ctx.lineTo(10, -5); ctx.lineTo(0, 10);
+        ctx.moveTo(-10, 20); ctx.lineTo(10, 20); ctx.lineTo(0, 35);
         ctx.fill();
         ctx.restore();
     } else if (e.type === 'hue-rotator') {
@@ -233,6 +243,13 @@ export function drawEntity(ctx, engine, state, e) {
             ctx.arc(0, 0, 40, 0, Math.PI * 2);
             ctx.fill();
         }
+        
+        // Port marker
+        ctx.rotate(e.dir * Math.PI / 2);
+        ctx.fillStyle = '#66FCF1';
+        ctx.beginPath();
+        ctx.moveTo(-8, 40); ctx.lineTo(8, 40); ctx.lineTo(0, 48);
+        ctx.fill();
         ctx.restore();
     } else if (e.type === 'slot-machine') {
         if (!e.state) {
