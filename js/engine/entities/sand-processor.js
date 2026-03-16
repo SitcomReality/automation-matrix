@@ -44,18 +44,27 @@ export function processSandProcessor(engine, e) {
         if (e.state.processTimer >= 30) {
             const { nx, ny } = getMachineOutputCell(e);
             const destE = engine.getEntityAt(nx, ny);
-            if (destE && ['belt', 'splitter'].includes(destE.type) && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
-                const original = e.state.processingItem;
-                engine.items.push({ 
-                    ...original,
-                    id: Math.random().toString(),
-                    s: Math.min(100, original.s + 15),
-                    l: Math.min(90, original.l + 10),
-                    x: nx, y: ny, progress: 0, outDir: destE.dir 
-                });
-                e.state.processTimer = 0;
+            
+            if (destE && ['belt', 'splitter'].includes(destE.type)) {
+                const blocked = engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5);
+                if (!blocked) {
+                    const original = e.state.processingItem;
+                    engine.items.push({ 
+                        ...original,
+                        id: Math.random().toString(),
+                        s: Math.min(100, original.s + 15),
+                        l: Math.min(90, original.l + 10),
+                        x: nx, y: ny, progress: 0, outDir: destE.dir 
+                    });
+                    e.state.processTimer = 0;
+                    e.state.processingItem = null;
+                } else {
+                    e.state.processTimer = 30; // Blocked: wait
+                }
             } else {
-                e.state.processTimer = 30; 
+                // Invalid output: discard
+                e.state.processTimer = 0;
+                e.state.processingItem = null;
             }
         }
     }

@@ -56,10 +56,12 @@ export function processStitcher(engine, e) {
                     e.state.buffer = [];
                     audioManager.play('place', 0.2);
                 } else {
-                    e.state.processTimer = 1;
+                    e.state.processTimer = 1; // Blocked: wait
                 }
             } else {
-                e.state.processTimer = 1;
+                // Invalid output: discard
+                e.state.buffer = [];
+                e.state.processTimer = 0;
             }
         }
     }

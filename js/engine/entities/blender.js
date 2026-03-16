@@ -104,17 +104,25 @@ export function processBlender(engine, e) {
         
         if (e.state.blendTimer <= 0) {
             const res = e.state.blendedResult;
+            const resH = res.h;
+            const resS = res.s;
+            const resL = res.l;
+            const resSides = res.sides;
+
             e.state.itemTypes = [];
             e.state.itemCounts = [0, 0];
             e.state.blending = false;
-            // No need to clear grid here as we cleared it at the start of blending
-            engine.items.push({ 
-                id: Math.random().toString(), 
-                type: 'mystic',
-                h: res.h, s: res.s, l: res.l, sides: res.sides,
-                x: outX, y: outY, progress: 0, outDir: destE.dir 
-            });
-            audioManager.play('money', 0.2);
+
+            // Only output if the destination is still valid; otherwise, the resources are discarded.
+            if (destE && ['belt', 'splitter'].includes(destE.type)) {
+                engine.items.push({ 
+                    id: Math.random().toString(), 
+                    type: 'mystic',
+                    h: resH, s: resS, l: resL, sides: resSides,
+                    x: outX, y: outY, progress: 0, outDir: destE.dir 
+                });
+                audioManager.play('money', 0.2);
+            }
         }
     }
 }

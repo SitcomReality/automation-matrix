@@ -25,22 +25,28 @@ export function processCrystallizer(engine, e) {
         e.state.processTimer--;
         if (e.state.processTimer <= 0) {
             const { nx, ny } = getMachineOutputCell(e);
-
             const destE = engine.getEntityAt(nx, ny);
-            if (destE && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
-                const original = e.state.processingItem;
-                engine.items.push({
-                    ...original,
-                    id: Math.random().toString(),
-                    s: 100,
-                    l: Math.min(95, original.l + 10),
-                    sides: original.sides >= 20 ? 40 : original.sides,
-                    x: nx, y: ny, progress: 0, outDir: destE.dir
-                });
-                e.state.processingItem = null;
-                audioManager.play('money', 0.4);
+
+            if (destE && ['belt', 'splitter'].includes(destE.type)) {
+                const blocked = engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5);
+                if (!blocked) {
+                    const original = e.state.processingItem;
+                    engine.items.push({
+                        ...original,
+                        id: Math.random().toString(),
+                        s: 100,
+                        l: Math.min(95, original.l + 10),
+                        sides: original.sides >= 20 ? 40 : original.sides,
+                        x: nx, y: ny, progress: 0, outDir: destE.dir
+                    });
+                    e.state.processingItem = null;
+                    audioManager.play('money', 0.4);
+                } else {
+                    e.state.processTimer = 1; // Blocked: wait
+                }
             } else {
-                e.state.processTimer = 1;
+                // Invalid output: discard
+                e.state.processingItem = null;
             }
         }
     }
