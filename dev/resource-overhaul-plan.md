@@ -1,5 +1,7 @@
 # Implementation Plan: Resource & Economy Overhaul (V1)
 
+> Status: **Implemented in code (V1 complete)** — this document is now a reference/design note that matches the current prototype implementation.
+
 ## Context: The Supernal Interregnum
 The mortal world is littered with the fragments of dead gods. These vestiges—Bloodrock, Tearshard, and Snotstone—are dull and powerless in their raw state. Through the logistics of the Automation Matrix, we will combine, refine, and distill these remnants into mystical substances of pure color and complex geometry.
 
