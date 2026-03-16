@@ -14,7 +14,9 @@ export const TOOLS = [
     { id: 'splitter', label: 'Splitter', icon: 'GitPullRequest' },
     { id: 'stitcher', label: 'Stitcher', icon: 'Scissors' },
     { id: 'blender', label: 'Blender', icon: 'Blend' },
+    { id: 'hue-rotator', label: 'Prism', icon: 'RefreshCw' },
     { id: 'sand-processor', label: 'Polisher', icon: 'Sparkles' },
+    { id: 'crystallizer', label: 'Apotheosis', icon: 'Gem' },
     { id: 'slot-machine', label: 'Sacrifice', icon: 'Coins' },
     { id: 'deleter', label: 'Delete', icon: 'Trash2' }
 ];

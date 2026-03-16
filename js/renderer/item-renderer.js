@@ -1,7 +1,20 @@
 import { TILE_SIZE } from '../constants.js';
 
 function drawPolygon(ctx, sides, radius) {
-    if (sides < 3) {
+    if (sides >= 30) { // Star tier (Tier 6)
+        const innerRadius = radius * 0.45;
+        const spikes = 5;
+        ctx.beginPath();
+        for (let i = 0; i < spikes * 2; i++) {
+            const r = i % 2 === 0 ? radius : innerRadius;
+            const angle = (Math.PI * i) / spikes - Math.PI / 2;
+            ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+        }
+        ctx.closePath();
+        ctx.fill();
+        return;
+    }
+    if (sides >= 15) { // Circle tier (Tier 5)
         ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
         return;
     }
@@ -92,6 +105,21 @@ export function drawItem(ctx, engine, item) {
         ctx.beginPath();
         ctx.arc(0, 0, radius + 4, 0, Math.PI * 2);
         ctx.stroke();
+    }
+
+    if (sides >= 30) {
+        // Prismatic rays for stars
+        ctx.setLineDash([]);
+        for (let i = 0; i < 4; i++) {
+            ctx.save();
+            ctx.rotate(engine.tick * 0.05 + (i * Math.PI / 2));
+            ctx.strokeStyle = `hsla(${(h + engine.tick) % 360}, ${s}%, 80%, 0.3)`;
+            ctx.beginPath();
+            ctx.moveTo(0, -radius * 2);
+            ctx.lineTo(0, radius * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
     }
 
     ctx.restore();

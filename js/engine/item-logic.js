@@ -58,7 +58,7 @@ export function updateItemMovement(engine) {
                     } else {
                         maxProgress = 1.5; 
                     }
-                } else if (['sand-processor', 'slot-machine', 'blender', 'stitcher'].includes(destE.type)) {
+                } else if (['sand-processor', 'slot-machine', 'blender', 'stitcher', 'hue-rotator', 'crystallizer'].includes(destE.type)) {
                     let isInputPoint = (nx >= destE.x && nx < destE.x + destE.width && ny >= destE.y && ny < destE.y + destE.height);
                     
                     if (isInputPoint) {
@@ -90,7 +90,7 @@ export function updateItemMovement(engine) {
                     item.progress -= 1.0;
                     item.inDir = oldOutDir;
                     assignOutput(destE, item);
-                } else if (['sand-processor', 'slot-machine', 'blender', 'stitcher'].includes(destE.type)) {
+                } else if (['sand-processor', 'slot-machine', 'blender', 'stitcher', 'hue-rotator', 'crystallizer'].includes(destE.type)) {
                     if (canAcceptItem(destE, item)) {
                         item.x = nx;
                         item.y = ny;

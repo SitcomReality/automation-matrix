@@ -81,6 +81,11 @@ export class GameEngine {
             w = 2; h = 2;
             const grid = Array(20).fill(null).map(() => Array(20).fill(0));
             config = { items: [], grid, blendTimer: 0, blending: false };
+        } else if (type === 'hue-rotator') {
+            config = { processingItem: null, processTimer: 0 };
+        } else if (type === 'crystallizer') {
+            w = 3; h = 3;
+            config = { processingItem: null, processTimer: 0 };
         }
         
         if (this.canPlace(x, y, w, h)) {

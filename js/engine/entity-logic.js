@@ -17,7 +17,7 @@ function blendHue(h1, h2) {
 export function canAcceptItem(e, item) {
     if (!e || !e.state) return false;
     
-    if (e.type === 'sand-processor') {
+    if (e.type === 'sand-processor' || e.type === 'hue-rotator' || e.type === 'crystallizer') {
         return !e.state.processingItem;
     }
     
@@ -238,7 +238,8 @@ export function processEntity(engine, e) {
                             if (maxSides === 3) nextSides = 4;
                             else if (maxSides === 4) nextSides = 6;
                             else if (maxSides === 6) nextSides = 8;
-                            else nextSides = 20; // Circle
+                            else if (maxSides === 8) nextSides = 20; // Circle
+                            else nextSides = 40; // Star
                         }
 
                         engine.items.push({
@@ -313,6 +314,87 @@ export function processEntity(engine, e) {
                     e.state.processTimer = 0;
                 } else {
                     e.state.processTimer = 30; 
+                }
+            }
+        }
+    }
+
+    // Hue Rotator (Prism)
+    if (e.type === 'hue-rotator') {
+        if (!e.state.processingItem) {
+            for (let i = engine.items.length - 1; i >= 0; i--) {
+                const item = engine.items[i];
+                if (item.x === e.x && item.y === e.y && canAcceptItem(e, item)) {
+                    e.state.processingItem = {...item};
+                    e.state.processTimer = 40;
+                    engine.items.splice(i, 1);
+                    break;
+                }
+            }
+        } else {
+            e.state.processTimer--;
+            if (e.state.processTimer <= 0) {
+                const { nx, ny } = {
+                    nx: e.x + (e.dir === 1 ? 1 : e.dir === 3 ? -1 : 0),
+                    ny: e.y + (e.dir === 2 ? 1 : e.dir === 0 ? -1 : 0)
+                };
+                const destE = engine.getEntityAt(nx, ny);
+                if (destE && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
+                    const original = e.state.processingItem;
+                    engine.items.push({
+                        ...original,
+                        id: Math.random().toString(),
+                        h: (original.h + 30) % 360, // Shift hue
+                        x: nx, y: ny, progress: 0, outDir: destE.dir
+                    });
+                    e.state.processingItem = null;
+                } else {
+                    e.state.processTimer = 1;
+                }
+            }
+        }
+    }
+
+    // Spectrum Crystallizer (Apotheosis)
+    if (e.type === 'crystallizer') {
+        if (!e.state.processingItem) {
+            // Find items entering the 3x3 area
+            for (let i = engine.items.length - 1; i >= 0; i--) {
+                const item = engine.items[i];
+                if (item.x >= e.x && item.x < e.x + 3 && item.y >= e.y && item.y < e.y + 3) {
+                    if (canAcceptItem(e, item)) {
+                        e.state.processingItem = {...item};
+                        e.state.processTimer = 180;
+                        engine.items.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        } else {
+            e.state.processTimer--;
+            if (e.state.processTimer <= 0) {
+                // Exit point
+                let nx, ny;
+                if (e.dir === 0) { nx = e.x + 1; ny = e.y - 1; }
+                else if (e.dir === 1) { nx = e.x + 3; ny = e.y + 1; }
+                else if (e.dir === 2) { nx = e.x + 1; ny = e.y + 3; }
+                else { nx = e.x - 1; ny = e.y + 1; }
+
+                const destE = engine.getEntityAt(nx, ny);
+                if (destE && !engine.items.find(i => i.x === nx && i.y === ny && i.progress < 0.5)) {
+                    const original = e.state.processingItem;
+                    engine.items.push({
+                        ...original,
+                        id: Math.random().toString(),
+                        s: 100, // Max Saturation
+                        l: Math.min(95, original.l + 10),
+                        sides: original.sides >= 20 ? 40 : original.sides, // Tier jump to star if circle
+                        x: nx, y: ny, progress: 0, outDir: destE.dir
+                    });
+                    e.state.processingItem = null;
+                    audioManager.play('money', 0.4);
+                } else {
+                    e.state.processTimer = 1;
                 }
             }
         }

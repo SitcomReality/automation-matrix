@@ -159,6 +159,70 @@ export function drawEntity(ctx, engine, state, e) {
         ctx.moveTo(-10, -5); ctx.lineTo(10, -5); ctx.lineTo(0, 10);
         ctx.fill();
         ctx.restore();
+    } else if (e.type === 'hue-rotator') {
+        const w = e.width * TILE_SIZE;
+        const h = e.height * TILE_SIZE;
+        ctx.fillStyle = '#2C3E50';
+        ctx.fillRect(2, 2, w - 4, h - 4);
+        
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        ctx.rotate(e.dir * Math.PI / 2);
+        
+        // Glass prism effect
+        ctx.beginPath();
+        ctx.moveTo(0, -10); ctx.lineTo(10, 8); ctx.lineTo(-10, 8);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(102, 252, 241, 0.4)';
+        ctx.fill();
+        ctx.strokeStyle = '#66FCF1';
+        ctx.stroke();
+
+        if (e.state.processingItem) {
+            const hue = (engine.tick * 5) % 360;
+            ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.8)`;
+            ctx.beginPath();
+            ctx.moveTo(-12, 0); ctx.lineTo(12, 0);
+            ctx.stroke();
+        }
+        ctx.restore();
+    } else if (e.type === 'crystallizer') {
+        const w = e.width * TILE_SIZE;
+        const h = e.height * TILE_SIZE;
+        ctx.fillStyle = '#0B0C10';
+        ctx.fillRect(2, 2, w - 4, h - 4);
+        ctx.strokeStyle = '#66FCF1';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(8, 8, w - 16, h - 16);
+
+        // Rotating rings
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        for (let i = 0; i < 3; i++) {
+            ctx.save();
+            ctx.rotate(engine.tick * (0.02 + i * 0.01) * (i % 2 === 0 ? 1 : -1));
+            ctx.strokeStyle = `hsla(180, 80%, ${50 + i * 10}%, ${0.2 + i * 0.2})`;
+            ctx.beginPath();
+            ctx.arc(0, 0, 15 + i * 12, 0, Math.PI * 1.5);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        if (e.state.processTimer > 0) {
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            // Glow
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
+            grad.addColorStop(0, 'rgba(255,255,255,0.5)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, 40, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     } else if (e.type === 'slot-machine') {
         if (!e.state) {
             ctx.restore();
