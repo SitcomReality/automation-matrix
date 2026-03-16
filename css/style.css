@@ -175,37 +175,6 @@ body {
     opacity: 0.6;
 }
 
-.matrix-container {
-    background: var(--bg-darker);
-    border: 2px solid var(--bg-dark);
-    padding: 8px;
-    border-radius: 4px;
-}
-
-.matrix-header {
-    font-size: 10px;
-    font-weight: bold;
-    color: var(--text);
-    margin-bottom: 4px;
-}
-
-.matrix-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
-}
-
-.matrix-cell {
-    width: 30px;
-    height: 30px;
-    background: var(--bg-dark);
-    border-radius: 2px;
-    transition: background 0.1s;
-}
-
-.matrix-cell.active {
-    background: var(--danger);
-}
 
 .tutorial-box {
     margin-top: 16px;
