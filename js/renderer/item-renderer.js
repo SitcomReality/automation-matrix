@@ -1,6 +1,6 @@
 import { TILE_SIZE } from '../constants.js';
 
-function drawPolygon(ctx, sides, radius) {
+export function drawPolygon(ctx, sides, radius) {
     if (sides >= 30) { // Star tier (Tier 6)
         const innerRadius = radius * 0.45;
         const spikes = 5;
