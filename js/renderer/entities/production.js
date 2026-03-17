@@ -4,8 +4,6 @@ import {
     drawDrum, drawPiston, drawSteamVent, 
     drawMachineIndicator, drawArcLightning 
 } from './parts.js';
-import { drawPolygon } from '../item-renderer.js';
-import { blendHue } from '../../engine/entities/utils.js';
 
 export function drawSandProcessor(ctx, engine, e) {
     const w = e.width * TILE_SIZE;
@@ -16,14 +14,11 @@ export function drawSandProcessor(ctx, engine, e) {
     ctx.lineWidth = 4;
     ctx.strokeRect(10, 10, w - 20, h - 20);
 
-    const item = e.state.processingItem;
-    const itemColor = item ? `hsl(${item.h}, ${item.s}%, ${item.l}%)` : '#66FCF1';
-
     const rotation = (e.state.phase === 'processing' ? engine.tick * 0.1 : engine.tick * 0.01);
-    drawDrum(ctx, w/2, h/2, 30, rotation, '#45A29E');
+    drawDrum(ctx, w/2, h/2, 30, rotation, e.state.phase === 'processing' ? '#66FCF1' : '#45A29E');
     
     if (e.state.phase === 'processing') {
-        ctx.fillStyle = itemColor;
+        ctx.fillStyle = '#C5C6C7';
         for(let i=0; i<8; i++) {
             const angle = rotation + (i * Math.PI * 2 / 8) + Math.sin(engine.tick * 0.1 + i) * 0.2;
             const r = 15 + Math.cos(engine.tick * 0.05 + i) * 10;
@@ -32,7 +27,7 @@ export function drawSandProcessor(ctx, engine, e) {
             ctx.fill();
         }
         if (engine.tick % 5 === 0) {
-            particleManager.spawn(e.x * TILE_SIZE + w/2, e.y * TILE_SIZE + h/2, 'spark', itemColor, 1);
+            particleManager.spawn(e.x * TILE_SIZE + w/2, e.y * TILE_SIZE + h/2, 'spark', '#66FCF1', 1);
         }
     }
     drawSteamVent(ctx, 15, 15, e.state.phase === 'processing', engine.tick);
@@ -84,23 +79,12 @@ export function drawStitcher(ctx, engine, e) {
     ctx.strokeRect(w/2 - 20, h/2 - 20, 40, 40);
     const anim = e.state.anim || 0;
     const extension = e.state.phase === 'pressing' ? Math.sin(anim * Math.PI) : 0;
-    
-    let stitchColor = '#FFF';
-    if (e.state.buffer && e.state.buffer.length > 0) {
-        if (e.state.buffer.length === 2) {
-            const h = blendHue(e.state.buffer[0].h, e.state.buffer[1].h);
-            stitchColor = `hsl(${h}, 80%, 60%)`;
-        } else {
-            stitchColor = `hsl(${e.state.buffer[0].h}, ${e.state.buffer[0].s}%, ${e.state.buffer[0].l}%)`;
-        }
-    }
-
     drawPiston(ctx, 15, h/2, Math.PI/2, 25, extension);
     drawPiston(ctx, w - 15, h/2, -Math.PI/2, 25, extension);
     drawPiston(ctx, w/2, 15, Math.PI, 25, extension);
     drawPiston(ctx, w/2, h - 15, 0, 25, extension);
     if (e.state.phase === 'pressing' && anim > 0.4 && anim < 0.6) {
-        if (engine.tick % 2 === 0) particleManager.spawn(e.x * TILE_SIZE + w/2, e.y * TILE_SIZE + h/2, 'spark', stitchColor, 3);
+        if (engine.tick % 2 === 0) particleManager.spawn(e.x * TILE_SIZE + w/2, e.y * TILE_SIZE + h/2, 'spark', '#FFF', 3);
     }
     drawSteamVent(ctx, 20, 20, e.state.phase === 'pressing', engine.tick);
     drawSteamVent(ctx, w - 20, 20, e.state.phase === 'pressing', engine.tick + 5);
@@ -160,24 +144,13 @@ export function drawCrystallizer(ctx, engine, e) {
         ctx.restore();
     }
     if (e.state.processingItem) {
-        const item = e.state.processingItem;
         const hover = Math.sin(engine.tick * 0.1) * 5;
-        ctx.save(); 
-        ctx.translate(0, hover); 
-        ctx.rotate(engine.tick * 0.05);
-        ctx.fillStyle = `hsl(${item.h}, ${item.s}%, ${item.l}%)`;
-        ctx.strokeStyle = '#FFF';
-        ctx.lineWidth = 1;
-        drawPolygon(ctx, item.sides, 8);
-        ctx.stroke();
-
+        ctx.save(); ctx.translate(0, hover); ctx.fillStyle = '#FFF';
+        ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
         const anim = e.state.anim || 0;
         const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 20 + anim * 20);
-        grad.addColorStop(0, `hsla(${item.h}, ${item.s}%, 70%, 0.8)`); 
-        grad.addColorStop(1, `hsla(${item.h}, ${item.s}%, 70%, 0)`);
-        ctx.fillStyle = grad; 
-        ctx.beginPath(); ctx.arc(0, 0, 20 + anim * 20, 0, Math.PI * 2); ctx.fill(); 
-        ctx.restore();
+        grad.addColorStop(0, 'rgba(102, 252, 241, 0.8)'); grad.addColorStop(1, 'rgba(102, 252, 241, 0)');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, 20 + anim * 20, 0, Math.PI * 2); ctx.fill(); ctx.restore();
         if (engine.tick % 5 < 3) {
             const corners = [[-35, -35], [35, -35], [35, 35], [-35, 35]];
             const corner = corners[Math.floor((engine.tick / 5) % 4)];

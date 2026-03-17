@@ -37,15 +37,20 @@ export function processBlender(engine, e) {
 
     // Particle physics (only when not blending)
     if (!e.state.blending && engine.tick % 2 === 0) {
+        const isBlade = (tx, ty) => {
+            // Blade is a plus centered at 10, 10
+            return (ty === 10 && tx >= 7 && tx <= 13) || (tx === 10 && ty >= 7 && ty <= 13);
+        };
+
         for (let y = 18; y >= 0; y--) {
             for (let x = 0; x < 20; x++) {
                 const val = e.state.grid[y][x];
                 if (val > 0) {
-                    if (e.state.grid[y + 1][x] === 0) {
+                    if (e.state.grid[y + 1][x] === 0 && !isBlade(x, y + 1)) {
                         e.state.grid[y][x] = 0; e.state.grid[y + 1][x] = val;
                     } else {
-                        let l = x > 0 && e.state.grid[y + 1][x - 1] === 0;
-                        let r = x < 19 && e.state.grid[y + 1][x + 1] === 0;
+                        let l = x > 0 && e.state.grid[y + 1][x - 1] === 0 && !isBlade(x - 1, y + 1);
+                        let r = x < 19 && e.state.grid[y + 1][x + 1] === 0 && !isBlade(x + 1, y + 1);
                         if (l && r) { 
                             if (Math.random() > 0.5) { e.state.grid[y][x] = 0; e.state.grid[y + 1][x - 1] = val; } 
                             else { e.state.grid[y][x] = 0; e.state.grid[y + 1][x + 1] = val; } 
@@ -59,6 +64,22 @@ export function processBlender(engine, e) {
     }
 
     if (!e.state.blending) {
+        if (!e.state.spawnQueue) e.state.spawnQueue = [];
+
+        // Handle staggered spawning
+        for (let i = e.state.spawnQueue.length - 1; i >= 0; i--) {
+            const entry = e.state.spawnQueue[i];
+            if (entry.delay > 0) {
+                entry.delay--;
+            } else {
+                let sx = 5 + Math.floor(Math.random() * 10);
+                if (e.state.grid[0][sx] === 0) {
+                    e.state.grid[0][sx] = entry.pType;
+                    e.state.spawnQueue.splice(i, 1);
+                }
+            }
+        }
+
         for (let i = engine.items.length - 1; i >= 0; i--) {
             const item = engine.items[i];
             if (item.x >= e.x && item.x < e.x + e.width && item.y >= e.y && item.y < e.y + e.height) {
@@ -73,11 +94,10 @@ export function processBlender(engine, e) {
                     }
                     e.state.itemCounts[typeIdx]++;
                     
-                    // Particle color based on input type
+                    // Queue particles instead of spawning instantly
                     const pType = typeIdx + 1;
                     for (let k = 0; k < 40; k++) {
-                        let sx = 5 + Math.floor(Math.random() * 10);
-                        if (e.state.grid[0][sx] === 0) e.state.grid[0][sx] = pType;
+                        e.state.spawnQueue.push({ pType, delay: Math.floor(Math.random() * 6) });
                     }
                     engine.items.splice(i, 1);
                 }
@@ -89,6 +109,7 @@ export function processBlender(engine, e) {
         e.state.blending = true;
         e.state.blendTimer = 30; // 500ms @ 60fps
         e.state.grid = Array(20).fill(null).map(() => Array(20).fill(0)); // Particles disappear
+        if (e.state.spawnQueue) e.state.spawnQueue = [];
         
         const itemA = e.state.itemTypes[0];
         const itemB = e.state.itemTypes[1];
